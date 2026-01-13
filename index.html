@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Modern Clock Application with advanced stopwatches, timers, alarms, and focus tracking">
+    <title>Focus Clock - Modern Time Management</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/components.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Navigation -->
+        <nav class="main-nav">
+            <div class="nav-brand">
+                <svg class="brand-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                <span class="brand-text">Focus Clock</span>
+            </div>
+            <div class="nav-tabs">
+                <button class="nav-tab active" data-section="clock">
+                    <svg class="tab-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    <span class="tab-text">Clock</span>
+                </button>
+                <button class="nav-tab" data-section="alarm">
+                    <svg class="tab-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <span class="tab-text">Alarm</span>
+                </button>
+                <button class="nav-tab" data-section="timer">
+                    <svg class="tab-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="13" r="8"></circle>
+                        <path d="M12 9v4l2 2"></path>
+                        <path d="M5 3L2 6"></path>
+                        <path d="M22 6l-3-3"></path>
+                        <path d="M6 19l-2 2"></path>
+                        <path d="M18 19l2 2"></path>
+                        <path d="M12 3v2"></path>
+                    </svg>
+                    <span class="tab-text">Timer</span>
+                </button>
+                <button class="nav-tab" data-section="stopwatch">
+                    <svg class="tab-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    <span class="tab-text">Stopwatch</span>
+                </button>
+                <button class="nav-tab" data-section="stopwatches">
+                    <svg class="tab-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                    <span class="tab-text">Stopwatches</span>
+                </button>
+                <button class="nav-tab" data-section="graphs">
+                    <svg class="tab-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                    <span class="tab-text">Graphs</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Clock Section -->
+            <section id="clock-section" class="section active">
+                <div class="clock-container">
+                    <div class="clock-display">
+                        <div class="time-display">
+                            <span id="clock-hours">00</span>
+                            <span class="time-separator">:</span>
+                            <span id="clock-minutes">00</span>
+                            <span class="time-separator">:</span>
+                            <span id="clock-seconds">00</span>
+                            <span id="clock-ampm" class="ampm"></span>
+                        </div>
+                        <div class="date-display" id="clock-date">Monday, January 13, 2026</div>
+                    </div>
+                    <div class="clock-controls">
+                        <button id="toggle-format" class="btn btn-secondary">
+                            <span id="format-text">12H</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Alarm Section -->
+            <section id="alarm-section" class="section">
+                <div class="section-header">
+                    <h2>Alarms</h2>
+                    <button id="add-alarm-btn" class="btn btn-primary">
+                        <span>+ Add Alarm</span>
+                    </button>
+                </div>
+                <div id="alarms-list" class="items-list">
+                    <!-- Alarms will be rendered here -->
+                </div>
+                <div id="no-alarms" class="empty-state">
+                    <svg class="empty-icon" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <p>No alarms set</p>
+                    <p class="empty-hint">Click "Add Alarm" to create one</p>
+                </div>
+            </section>
+
+            <!-- Timer Section -->
+            <section id="timer-section" class="section">
+                <div class="timer-container">
+                    <div class="timer-display">
+                        <div class="timer-input-group" id="timer-input-mode">
+                            <input type="number" id="timer-hours" class="timer-input" min="0" max="99" value="0"
+                                placeholder="00">
+                            <span class="timer-label">h</span>
+                            <input type="number" id="timer-minutes" class="timer-input" min="0" max="59" value="5"
+                                placeholder="00">
+                            <span class="timer-label">m</span>
+                            <input type="number" id="timer-seconds" class="timer-input" min="0" max="59" value="0"
+                                placeholder="00">
+                            <span class="timer-label">s</span>
+                        </div>
+                        <div class="timer-countdown" id="timer-countdown-mode" style="display: none;">
+                            <span id="timer-display-hours">00</span>
+                            <span class="time-separator">:</span>
+                            <span id="timer-display-minutes">05</span>
+                            <span class="time-separator">:</span>
+                            <span id="timer-display-seconds">00</span>
+                        </div>
+                        <div class="timer-progress-ring" id="timer-progress-container">
+                            <svg class="progress-ring" width="200" height="200">
+                                <circle class="progress-ring-bg" cx="100" cy="100" r="90" />
+                                <circle id="timer-progress" class="progress-ring-fill" cx="100" cy="100" r="90" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="timer-controls">
+                        <button id="timer-start" class="btn btn-primary btn-large">Start</button>
+                        <button id="timer-pause" class="btn btn-secondary btn-large"
+                            style="display: none;">Pause</button>
+                        <button id="timer-reset" class="btn btn-ghost btn-large">Reset</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Basic Stopwatch Section -->
+            <section id="stopwatch-section" class="section">
+                <div class="stopwatch-container">
+                    <div class="stopwatch-display">
+                        <span id="sw-hours">00</span>
+                        <span class="time-separator">:</span>
+                        <span id="sw-minutes">00</span>
+                        <span class="time-separator">:</span>
+                        <span id="sw-seconds">00</span>
+                        <span class="time-separator">.</span>
+                        <span id="sw-ms" class="milliseconds">00</span>
+                    </div>
+                    <div class="stopwatch-controls">
+                        <button id="sw-start" class="btn btn-primary btn-large">Start</button>
+                        <button id="sw-pause" class="btn btn-secondary btn-large" style="display: none;">Pause</button>
+                        <button id="sw-lap" class="btn btn-secondary btn-large" disabled>Lap</button>
+                        <button id="sw-reset" class="btn btn-ghost btn-large">Reset</button>
+                    </div>
+                    <div id="sw-laps" class="laps-list">
+                        <!-- Laps will be rendered here -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Advanced Stopwatches Section -->
+            <section id="stopwatches-section" class="section">
+                <div class="section-header">
+                    <h2>Focus Stopwatches</h2>
+                    <button id="add-stopwatch-btn" class="btn btn-primary">
+                        <span>+ New Stopwatch</span>
+                    </button>
+                </div>
+                <div id="stopwatches-grid" class="stopwatches-grid">
+                    <!-- Stopwatches will be rendered here -->
+                </div>
+                <div id="no-stopwatches" class="empty-state">
+                    <svg class="empty-icon" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                    <p>No focus stopwatches</p>
+                    <p class="empty-hint">Create a stopwatch to track your focus sessions</p>
+                </div>
+            </section>
+
+            <!-- Graphs Section -->
+            <section id="graphs-section" class="section">
+                <div class="section-header">
+                    <h2>Graphs & Analysis</h2>
+                    <div class="graphs-controls">
+                        <select id="graphs-range" class="select-input">
+                            <option value="7">Last 7 days</option>
+                            <option value="14">Last 14 days</option>
+                            <option value="30">Last 30 days</option>
+                        </select>
+                        <label class="toggle-label">
+                            <input type="checkbox" id="show-deleted-graphs">
+                            <span>Show deleted</span>
+                        </label>
+                    </div>
+                </div>
+                <div id="graphs-container" class="graphs-container">
+                    <!-- Graphs will be rendered here -->
+                </div>
+                <div id="no-graphs" class="empty-state">
+                    <svg class="empty-icon" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                    <p>No data to display</p>
+                    <p class="empty-hint">Start using stopwatches to see your progress</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal for Alarm -->
+    <div id="alarm-modal" class="modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="alarm-modal-title">Add Alarm</h3>
+                <button class="modal-close" data-close-modal>&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="alarm-time">Time</label>
+                    <input type="time" id="alarm-time" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label for="alarm-label">Label</label>
+                    <input type="text" id="alarm-label" class="form-input" placeholder="Wake up">
+                </div>
+                <div class="form-group">
+                    <label>Repeat</label>
+                    <div class="days-selector">
+                        <button type="button" class="day-btn" data-day="0">S</button>
+                        <button type="button" class="day-btn" data-day="1">M</button>
+                        <button type="button" class="day-btn" data-day="2">T</button>
+                        <button type="button" class="day-btn" data-day="3">W</button>
+                        <button type="button" class="day-btn" data-day="4">T</button>
+                        <button type="button" class="day-btn" data-day="5">F</button>
+                        <button type="button" class="day-btn" data-day="6">S</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" data-close-modal>Cancel</button>
+                <button id="save-alarm-btn" class="btn btn-primary">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Stopwatch -->
+    <div id="stopwatch-modal" class="modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="stopwatch-modal-title">New Stopwatch</h3>
+                <button class="modal-close" data-close-modal>&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="stopwatch-name">Name</label>
+                    <input type="text" id="stopwatch-name" class="form-input" placeholder="Work Focus" required>
+                </div>
+                <div class="form-group">
+                    <label for="stopwatch-color">Color</label>
+                    <div class="color-picker">
+                        <input type="color" id="stopwatch-color" value="#6366f1">
+                        <div class="color-presets">
+                            <button type="button" class="color-preset" data-color="#6366f1"
+                                style="background: #6366f1;"></button>
+                            <button type="button" class="color-preset" data-color="#8b5cf6"
+                                style="background: #8b5cf6;"></button>
+                            <button type="button" class="color-preset" data-color="#ec4899"
+                                style="background: #ec4899;"></button>
+                            <button type="button" class="color-preset" data-color="#f43f5e"
+                                style="background: #f43f5e;"></button>
+                            <button type="button" class="color-preset" data-color="#f97316"
+                                style="background: #f97316;"></button>
+                            <button type="button" class="color-preset" data-color="#eab308"
+                                style="background: #eab308;"></button>
+                            <button type="button" class="color-preset" data-color="#22c55e"
+                                style="background: #22c55e;"></button>
+                            <button type="button" class="color-preset" data-color="#14b8a6"
+                                style="background: #14b8a6;"></button>
+                            <button type="button" class="color-preset" data-color="#0ea5e9"
+                                style="background: #0ea5e9;"></button>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="stopwatch-goal">Daily Goal (hours)</label>
+                    <input type="number" id="stopwatch-goal" class="form-input" min="0.5" max="24" step="0.5" value="8">
+                </div>
+                <div class="form-group">
+                    <label>Display Mode</label>
+                    <div class="display-mode-selector">
+                        <button type="button" class="mode-btn active" data-mode="numeric">
+                            <span class="mode-icon">123</span>
+                            <span>Numeric</span>
+                        </button>
+                        <button type="button" class="mode-btn" data-mode="circular">
+                            <svg class="mode-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M12 2a10 10 0 0 1 10 10" stroke-width="3"></path>
+                            </svg>
+                            <span>Circular</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" data-close-modal>Cancel</button>
+                <button id="delete-stopwatch-btn" class="btn btn-danger" style="display: none;">Delete</button>
+                <button id="save-stopwatch-btn" class="btn btn-primary">Create</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="toast">
+        <span id="toast-message"></span>
+    </div>
+
+    <!-- Audio for notifications -->
+    <audio id="alarm-sound" preload="auto">
+        <source
+            src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2teleyn4NKC8vqVzMh4+l8/Sm3Yb6ijU3dCukl1hbHGQp66hfFFIXYSeo5p/WkZRg5qdmIRjUF5+lpmXi3JdX3SLl5SOeFxfdY2UkoyAZFlncYuRi4Z4Wl5yiY+MiH9fYnWHi4iFemFid4eIh4V8YmR2goWDgXxmZXV/goKAdWdncn2Af39yZ2lxe358em9panB5e3p4cmlrcXh6eXdxa2xxdnh4dnBtbnN2dndzcG5vc3Z2dnJvcHJ0dXV0cHBxc3R1dHJwcXJzdHRzcXFyc3NzcnFxcnJyc3JxcXJycnJycXFycnJycnJxcnJycnJxcXJycnJycXJycnJycnJycnJycnJycnJycnJycnJycnJycnJycnJycnJycnJycnJycnJycnJycnJycnJy"
+            type="audio/wav">
+    </audio>
+
+    <script src="js/storage.js"></script>
+    <script src="js/clock.js"></script>
+    <script src="js/alarm.js"></script>
+    <script src="js/timer.js"></script>
+    <script src="js/stopwatch.js"></script>
+    <script src="js/time-tracker.js"></script>
+    <script src="js/advanced-stopwatches.js"></script>
+    <script src="js/graphs.js"></script>
+    <script src="js/app.js"></script>
+</body>
+
+</html>
