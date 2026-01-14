@@ -6,7 +6,7 @@ const App = {
     currentSection: 'clock',
 
     init() {
-        console.log('Focus Clock initializing...');
+        console.log('Time Vault initializing...');
 
         // Request notification permission
         if ('Notification' in window && Notification.permission === 'default') {
@@ -40,7 +40,7 @@ const App = {
             StorageManager.saveLastCloseTime();
         }, 60000); // Every minute
 
-        console.log('Focus Clock initialized successfully!');
+        console.log('Time Vault initialized successfully!');
     },
 
     setupNavigation() {

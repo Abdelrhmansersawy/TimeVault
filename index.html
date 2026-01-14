@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description"
-        content="Modern Clock Application with advanced stopwatches, timers, alarms, and focus tracking">
-    <title>Focus Clock - Modern Time Management</title>
+        content="Time Vault - Modern time tracking with stopwatches, timers, alarms, and focus analytics">
+    <title>Time Vault - Modern Time Management</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -24,7 +24,7 @@
                     <circle cx="12" cy="12" r="10"></circle>
                     <polyline points="12 6 12 12 16 14"></polyline>
                 </svg>
-                <span class="brand-text">Focus Clock</span>
+                <span class="brand-text">Time Vault</span>
             </div>
             <div class="nav-tabs">
                 <button class="nav-tab active" data-section="clock">
@@ -217,12 +217,31 @@
             <!-- Graphs Section -->
             <section id="graphs-section" class="section">
                 <div class="section-header">
-                    <h2>Graphs & Analysis</h2>
+                    <h2>Graphs &amp; Analysis</h2>
                     <div class="graphs-controls">
+                        <div class="chart-type-toggle">
+                            <button class="chart-type-btn active" data-chart-type="bar" title="Bar Chart">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                                </svg>
+                            </button>
+                            <button class="chart-type-btn" data-chart-type="line" title="Line Chart">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <polyline points="22 12 18 8 14 12 10 6 6 10 2 6"></polyline>
+                                </svg>
+                            </button>
+                        </div>
                         <select id="graphs-range" class="select-input">
                             <option value="7">Last 7 days</option>
                             <option value="14">Last 14 days</option>
                             <option value="30">Last 30 days</option>
+                            <option value="90">Last 90 days</option>
+                            <option value="365">Last year</option>
+                            <option value="all">All Time</option>
                         </select>
                         <label class="toggle-label">
                             <input type="checkbox" id="show-deleted-graphs">
@@ -230,8 +249,12 @@
                         </label>
                     </div>
                 </div>
+                <!-- Global Overview Graph -->
+                <div id="global-overview-container" class="global-overview-container">
+                    <!-- Global overview graph will be rendered here -->
+                </div>
                 <div id="graphs-container" class="graphs-container">
-                    <!-- Graphs will be rendered here -->
+                    <!-- Individual graphs will be rendered here -->
                 </div>
                 <div id="no-graphs" class="empty-state">
                     <svg class="empty-icon" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor"
