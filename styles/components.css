@@ -1,5 +1,5 @@
 /* ============================================
-   FOCUS CLOCK - Component Styles
+   TIME VAULT - Component Styles
    ============================================ */
 
 /* Buttons */
@@ -510,32 +510,64 @@
 .stopwatch-card {
     background: var(--gradient-card);
     backdrop-filter: blur(10px);
-    border: 1px solid var(--color-border);
+    border: 2px solid transparent;
     border-radius: var(--radius-2xl);
     padding: var(--spacing-xl);
     transition: all var(--transition-base);
     position: relative;
     overflow: hidden;
+    background-clip: padding-box;
 }
 
+/* Border progress indicator using pseudo-element */
 .stopwatch-card::before {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: var(--stopwatch-color, var(--color-accent));
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    border-radius: var(--radius-2xl);
+    background: conic-gradient(from 0deg,
+            var(--stopwatch-color, var(--color-accent)) 0%,
+            var(--stopwatch-color, var(--color-accent)) calc(var(--progress, 0) * 1%),
+            var(--color-border) calc(var(--progress, 0) * 1%),
+            var(--color-border) 100%);
+    z-index: -1;
+    transition: all var(--transition-base);
 }
 
-.stopwatch-card:hover {
-    border-color: rgba(255, 255, 255, 0.15);
-    box-shadow: var(--shadow-lg);
+/* Inner background overlay */
+.stopwatch-card::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    right: 2px;
+    bottom: 2px;
+    border-radius: calc(var(--radius-2xl) - 2px);
+    background: var(--gradient-card);
+    z-index: -1;
 }
 
-.stopwatch-card.running {
-    border-color: var(--stopwatch-color, var(--color-accent));
-    box-shadow: 0 0 30px rgba(var(--stopwatch-color-rgb, 99, 102, 241), 0.2);
+.stopwatch-card:hover::before {
+    filter: brightness(1.2);
+}
+
+.stopwatch-card.running::before {
+    animation: borderPulse 2s ease-in-out infinite;
+}
+
+@keyframes borderPulse {
+
+    0%,
+    100% {
+        filter: brightness(1);
+    }
+
+    50% {
+        filter: brightness(1.3);
+    }
 }
 
 .stopwatch-card-header {
@@ -794,4 +826,226 @@
 
 ::-webkit-scrollbar-thumb:hover {
     background: var(--color-text-muted);
+}
+
+/* Chart Type Toggle */
+.chart-type-toggle {
+    display: flex;
+    gap: 2px;
+    background: var(--color-bg-tertiary);
+    padding: 3px;
+    border-radius: var(--radius-md);
+}
+
+.chart-type-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 32px;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-base);
+}
+
+.chart-type-btn:hover {
+    color: var(--color-text-primary);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.chart-type-btn.active {
+    background: var(--color-accent);
+    color: var(--color-text-primary);
+}
+
+/* Global Overview Container */
+.global-overview-container {
+    margin-bottom: var(--spacing-xl);
+}
+
+.global-overview-card {
+    background: var(--gradient-card);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    padding: var(--spacing-xl);
+}
+
+.global-overview-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-lg);
+}
+
+.global-overview-title {
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-semibold);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.overview-chart-container {
+    height: 280px;
+    position: relative;
+}
+
+.zoom-reset-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: var(--font-size-xs);
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all var(--transition-base);
+}
+
+.zoom-reset-btn:hover {
+    background: var(--color-bg-card-hover);
+    color: var(--color-text-primary);
+}
+
+/* Legend Styles */
+.overview-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-lg);
+    padding-top: var(--spacing-lg);
+    border-top: 1px solid var(--color-border);
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    user-select: none;
+}
+
+.legend-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.legend-item.hidden {
+    opacity: 0.4;
+}
+
+.legend-item.hidden .legend-color {
+    background: var(--color-text-muted) !important;
+}
+
+.legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.legend-label {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+}
+
+.legend-item:hover .legend-label {
+    color: var(--color-text-primary);
+}
+
+/* Goal Line */
+.goal-line {
+    stroke: rgba(255, 255, 255, 0.4);
+    stroke-width: 2;
+    stroke-dasharray: 8, 4;
+}
+
+.goal-label {
+    fill: var(--color-text-muted);
+    font-size: 10px;
+}
+
+/* Bar Colors Based on Goal Achievement */
+.graph-bar.goal-exceeded {
+    opacity: 1;
+}
+
+.graph-bar.goal-met {
+    opacity: 0.9;
+}
+
+.graph-bar.goal-close {
+    opacity: 0.75;
+}
+
+.graph-bar.goal-below {
+    opacity: 0.6;
+}
+
+/* Line Chart Styles */
+.graph-line {
+    fill: none;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.graph-area {
+    opacity: 0.15;
+}
+
+.graph-point {
+    fill: var(--color-bg-secondary);
+    stroke-width: 2;
+    cursor: pointer;
+    transition: r var(--transition-fast);
+}
+
+.graph-point:hover {
+    r: 6;
+}
+
+/* Zoom Selection Overlay */
+.zoom-selection {
+    fill: rgba(99, 102, 241, 0.2);
+    stroke: var(--color-accent);
+    stroke-width: 1;
+    stroke-dasharray: 4, 2;
+}
+
+/* Goal Stats in Graph Card */
+.graph-stats-extended {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-lg);
+    padding-top: var(--spacing-lg);
+    border-top: 1px solid var(--color-border);
+}
+
+.graph-stat-success {
+    color: var(--color-success);
+}
+
+.graph-stat-warning {
+    color: var(--color-warning);
+}
+
+/* Overview graph empty state hint */
+.overview-empty-hint {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
 }

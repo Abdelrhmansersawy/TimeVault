@@ -1,5 +1,5 @@
 /* ============================================
-   FOCUS CLOCK - Main Stylesheet
+   TIME VAULT - Main Stylesheet
    Modern dark theme with glassmorphism
    ============================================ */
 
@@ -412,6 +412,13 @@ body::before {
     color: var(--color-text-primary);
     padding: var(--spacing-sm);
     transition: border-color var(--transition-base);
+    -moz-appearance: textfield;
+}
+
+.timer-input::-webkit-outer-spin-button,
+.timer-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
 }
 
 .timer-input:focus {
@@ -429,14 +436,19 @@ body::before {
     font-weight: var(--font-weight-light);
 }
 
-/* Progress Ring */
+/* Progress Ring - Visible during countdown */
 .timer-progress-ring {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: -1;
-    opacity: 0.3;
+    opacity: 0;
+    transition: opacity var(--transition-base);
+}
+
+.timer-progress-ring.active {
+    opacity: 1;
 }
 
 .progress-ring {

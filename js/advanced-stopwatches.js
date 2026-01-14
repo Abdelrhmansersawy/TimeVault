@@ -122,7 +122,7 @@ const AdvancedStopwatchesModule = {
         return `
             <div class="stopwatch-card ${sw.isRunning ? 'running' : ''}" 
                  data-stopwatch-id="${sw.id}"
-                 style="--stopwatch-color: ${sw.color || '#6366f1'}; --stopwatch-color-rgb: ${colorRGBString};">
+                 style="--stopwatch-color: ${sw.color || '#6366f1'}; --stopwatch-color-rgb: ${colorRGBString}; --progress: ${percentProgress};">
                 
                 <div class="stopwatch-card-header">
                     <div class="stopwatch-name">
@@ -149,7 +149,6 @@ const AdvancedStopwatchesModule = {
                     ` : `
                         <button class="btn btn-primary btn-large" data-start="${sw.id}">Start</button>
                     `}
-                    <button class="btn btn-ghost" data-reset="${sw.id}" ${elapsedMs === 0 ? 'disabled' : ''}>Reset</button>
                 </div>
             </div>
         `;
@@ -198,14 +197,6 @@ const AdvancedStopwatchesModule = {
             });
         });
 
-        // Reset buttons
-        this.elements.grid.querySelectorAll('[data-reset]').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const id = btn.dataset.reset;
-                this.resetStopwatch(id);
-            });
-        });
-
         // Edit buttons
         this.elements.grid.querySelectorAll('[data-edit]').forEach(btn => {
             btn.addEventListener('click', () => {
@@ -247,30 +238,6 @@ const AdvancedStopwatchesModule = {
         }
     },
 
-    resetStopwatch(id) {
-        const sw = this.stopwatches.find(sw => sw.id === id);
-        if (sw) {
-            // Save current time to history before resetting
-            const elapsedMs = TimeTracker.getElapsedMs(sw);
-            if (elapsedMs > 0) {
-                StorageManager.addHistoryRecord({
-                    stopwatchId: sw.id,
-                    date: getDateString(),
-                    totalMs: elapsedMs
-                });
-            }
-
-            // Reset
-            sw.isRunning = false;
-            sw.startTimestamp = null;
-            sw.accumulatedMs = 0;
-
-            StorageManager.updateStopwatch(id, sw);
-            this.render();
-            App.showToast(`Reset: ${sw.name}`);
-        }
-    },
-
     updateRunningDisplays() {
         this.stopwatches.forEach(sw => {
             if (sw.isRunning) {
@@ -301,10 +268,19 @@ const AdvancedStopwatchesModule = {
 
                 // Update goal info
                 const card = document.querySelector(`[data-stopwatch-id="${sw.id}"]`);
-                const goalInfo = card?.querySelector('.stopwatch-goal-info');
-                if (goalInfo) {
+                if (card) {
                     const goalMs = sw.goalMs || 8 * 60 * 60 * 1000;
-                    goalInfo.textContent = `Goal: ${this.formatGoal(goalMs)} • ${formatTimeShort(elapsedMs)} tracked`;
+                    const progress = Math.min(elapsedMs / goalMs, 1);
+                    const percentProgress = Math.round(progress * 100);
+
+                    // Update border progress
+                    card.style.setProperty('--progress', percentProgress);
+
+                    // Update goal info text
+                    const goalInfo = card.querySelector('.stopwatch-goal-info');
+                    if (goalInfo) {
+                        goalInfo.textContent = `Goal: ${this.formatGoal(goalMs)} • ${formatTimeShort(elapsedMs)} tracked`;
+                    }
                 }
             }
         });

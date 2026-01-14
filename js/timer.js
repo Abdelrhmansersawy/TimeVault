@@ -132,7 +132,7 @@ const TimerModule = {
 
         // System notification
         if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification('Focus Clock Timer', {
+            new Notification('Time Vault Timer', {
                 body: 'Time is up!'
             });
         }

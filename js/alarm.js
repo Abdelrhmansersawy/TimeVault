@@ -258,7 +258,7 @@ const AlarmModule = {
 
         // Try system notification
         if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification('Focus Clock Alarm', {
+            new Notification('Time Vault Alarm', {
                 body: alarm.label || 'Time is up!'
             });
         }
