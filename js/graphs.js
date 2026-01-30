@@ -22,9 +22,10 @@ const GraphsModule = {
     },
 
     showDeleted: false,
-    range: 7, // days or 'all'
+    range: 7, // days or 'all' - global default
     chartType: 'bar', // 'bar' or 'line'
     hiddenCategories: new Set(),
+    categoryRanges: {}, // REQ-7: Per-category time range overrides { stopwatchId: rangeDays }
     zoomRange: null, // { startDate, endDate } or null
     isDragging: false,
     dragStart: null,
@@ -93,17 +94,26 @@ const GraphsModule = {
             ? dates.filter(d => d >= this.zoomRange.startDate && d <= this.zoomRange.endDate)
             : dates;
 
-        // Render global overview
+        // Render global overview (uses global range)
         this.renderGlobalOverview(displayStopwatches, history, displayDates);
 
-        // Render individual graphs
+        // Render individual graphs (each can have its own range)
         this.elements.container.innerHTML = displayStopwatches.map(sw => {
             const swHistory = history.filter(h => h.stopwatchId === sw.id);
-            return this.renderGraphCard(sw, swHistory, displayDates);
-        }).join('');
+            // REQ-7: Use per-category range if set, otherwise use global range
+            const swRange = this.categoryRanges[sw.id] || this.range;
+            const swDates = this.getDateRange(swRange, sw.id);
+            const swDisplayDates = this.zoomRange
+                ? swDates.filter(d => d >= this.zoomRange.startDate && d <= this.zoomRange.endDate)
+                : swDates;
+            return this.renderGraphCard(sw, swHistory, swDisplayDates, swRange);
+        }).join('') + this.renderWasteTimeAnalysis();
 
         // Add tooltip event listeners
         this.addTooltipListeners();
+
+        // REQ-7: Add per-category range change listeners
+        this.addCategoryRangeListeners();
     },
 
     renderGlobalOverview(stopwatches, history, dates) {
@@ -354,32 +364,62 @@ const GraphsModule = {
         });
     },
 
-    renderGraphCard(sw, history, dates) {
+    renderGraphCard(sw, history, dates, currentRange = this.range) {
         const data = this.prepareGraphData(history, dates);
-        const maxValue = Math.max(...data.map(d => d.value), 1);
         const totalMs = data.reduce((sum, d) => sum + d.value, 0);
-        const avgMs = totalMs / dates.length;
+        const avgMs = dates.length > 0 ? totalMs / dates.length : 0;
         const goalMs = sw.goalMs || 8 * 60 * 60 * 1000;
+        const isMinimize = sw.goalDirection === 'minimize';
 
-        // Calculate goal-based stats
-        const daysWithData = data.filter(d => d.value > 0);
-        const daysGoalMet = data.filter(d => d.value >= goalMs).length;
-        const daysCloseToGoal = data.filter(d => d.value >= goalMs * 0.8 && d.value < goalMs).length;
+        // Calculate goal-based stats depending on direction
+        let bestDayValue, daysGoalMet, daysCloseToGoal;
+
+        if (isMinimize) {
+            // For minimize: best day is the least time, goal met when time <= goal
+            const daysWithData = data.filter(d => d.value > 0);
+            bestDayValue = daysWithData.length > 0 ? Math.min(...daysWithData.map(d => d.value)) : 0;
+            daysGoalMet = data.filter(d => d.value <= goalMs && d.value > 0).length;
+            // Near goal for minimize: within 120% of goal (slightly over is close)
+            daysCloseToGoal = data.filter(d => d.value > goalMs && d.value <= goalMs * 1.2).length;
+        } else {
+            // For maximize: best day is the most time, goal met when time >= goal
+            bestDayValue = Math.max(...data.map(d => d.value), 0);
+            daysGoalMet = data.filter(d => d.value >= goalMs).length;
+            // Near goal for maximize: 80%+ of goal
+            daysCloseToGoal = data.filter(d => d.value >= goalMs * 0.8 && d.value < goalMs).length;
+        }
+
         const goalReachedPercent = dates.length > 0 ? Math.round((daysGoalMet / dates.length) * 100) : 0;
         const closeToGoalPercent = dates.length > 0 ? Math.round(((daysGoalMet + daysCloseToGoal) / dates.length) * 100) : 0;
+        const nearGoalLabel = isMinimize ? 'Near Goal (≤120%)' : 'Near Goal (80%+)';
+        const directionBadge = isMinimize ? '<span class="goal-direction-badge minimize">▼ Min</span>' : '';
+
+        // REQ-9: Session-based analytics
+        const sessionAnalytics = this.getSessionAnalytics(sw.id, currentRange);
+
+        // REQ-7: Per-category range selector
+        const rangeOptions = [7, 14, 30, 90, 'all'].map(r => {
+            const selected = currentRange === r ? 'selected' : '';
+            const label = r === 'all' ? 'All Time' : `${r} Days`;
+            return `<option value="${r}" ${selected}>${label}</option>`;
+        }).join('');
 
         return `
             <div class="graph-card ${sw.deleted ? 'deleted' : ''}" data-graph-id="${sw.id}">
                 <div class="graph-header">
                     <div class="graph-color-indicator" style="background: ${sw.color || '#6366f1'};"></div>
                     <span class="graph-title">${this.escapeHtml(sw.name)}</span>
+                    ${directionBadge}
                     ${sw.deleted ? '<span class="graph-deleted-badge">Deleted</span>' : ''}
+                    <select class="category-range-select select-input" data-graph-id="${sw.id}" style="margin-left: auto;">
+                        ${rangeOptions}
+                    </select>
                 </div>
                 
                 <div class="graph-container">
                     ${this.chartType === 'bar'
-                ? this.renderBarChart(data, maxValue, sw.color || '#6366f1', goalMs)
-                : this.renderLineChart(data, maxValue, sw.color || '#6366f1', goalMs)}
+                ? this.renderBarChart(data, Math.max(...data.map(d => d.value), 1), sw.color || '#6366f1', goalMs, isMinimize)
+                : this.renderLineChart(data, Math.max(...data.map(d => d.value), 1), sw.color || '#6366f1', goalMs, isMinimize)}
                     <div class="graph-tooltip" id="tooltip-${sw.id}"></div>
                 </div>
 
@@ -393,23 +433,95 @@ const GraphsModule = {
                         <span class="graph-stat-value">${formatTimeShort(avgMs)}</span>
                     </div>
                     <div class="graph-stat">
-                        <span class="graph-stat-label">Best Day</span>
-                        <span class="graph-stat-value">${formatTimeShort(maxValue)}</span>
+                        <span class="graph-stat-label">${isMinimize ? 'Best Day (Min)' : 'Best Day'}</span>
+                        <span class="graph-stat-value">${formatTimeShort(bestDayValue)}</span>
                     </div>
                     <div class="graph-stat">
                         <span class="graph-stat-label">Goal Reached</span>
                         <span class="graph-stat-value graph-stat-success">${goalReachedPercent}%</span>
                     </div>
                     <div class="graph-stat">
-                        <span class="graph-stat-label">Near Goal (80%+)</span>
+                        <span class="graph-stat-label">${nearGoalLabel}</span>
                         <span class="graph-stat-value graph-stat-warning">${closeToGoalPercent}%</span>
                     </div>
                 </div>
+                
+                ${sessionAnalytics.sessionCount > 0 ? `
+                <div class="graph-stats-session">
+                    <div class="graph-stat">
+                        <span class="graph-stat-label">Sessions</span>
+                        <span class="graph-stat-value">${sessionAnalytics.sessionCount}</span>
+                    </div>
+                    <div class="graph-stat">
+                        <span class="graph-stat-label">Avg Session</span>
+                        <span class="graph-stat-value">${formatTimeShort(sessionAnalytics.avgSessionMs)}</span>
+                    </div>
+                    <div class="graph-stat">
+                        <span class="graph-stat-label">Longest</span>
+                        <span class="graph-stat-value">${formatTimeShort(sessionAnalytics.longestSessionMs)}</span>
+                    </div>
+                    <div class="graph-stat">
+                        <span class="graph-stat-label">Most Active Hour</span>
+                        <span class="graph-stat-value">${sessionAnalytics.mostActiveHour}</span>
+                    </div>
+                    <div class="graph-stat">
+                        <span class="graph-stat-label">Most Active Day</span>
+                        <span class="graph-stat-value">${sessionAnalytics.mostActiveDay}</span>
+                    </div>
+                </div>
+                ` : ''}
             </div>
         `;
     },
 
-    renderBarChart(data, maxValue, color, goalMs) {
+    /**
+     * REQ-9: Get session-based analytics for a stopwatch
+     */
+    getSessionAnalytics(stopwatchId, range) {
+        const days = range === 'all' ? 365 : parseInt(range) || 30;
+        const sessions = StorageManager.getSessionsForStopwatch(stopwatchId, days)
+            .filter(s => s.endTime); // Only completed sessions
+
+        if (sessions.length === 0) {
+            return {
+                sessionCount: 0,
+                avgSessionMs: 0,
+                longestSessionMs: 0,
+                mostActiveHour: '-',
+                mostActiveDay: '-'
+            };
+        }
+
+        const totalDuration = sessions.reduce((sum, s) => sum + s.durationMs, 0);
+        const longestSession = Math.max(...sessions.map(s => s.durationMs));
+
+        // Find most active hour
+        const hourlyData = StorageManager.getSessionsByHour(stopwatchId, days);
+        const maxHourValue = Math.max(...hourlyData);
+        const mostActiveHourIdx = hourlyData.indexOf(maxHourValue);
+        const hourLabel = mostActiveHourIdx >= 0 && maxHourValue > 0
+            ? `${mostActiveHourIdx}:00`
+            : '-';
+
+        // Find most active day
+        const weeklyData = StorageManager.getSessionsByDayOfWeek(stopwatchId, days);
+        const maxDayValue = Math.max(...weeklyData);
+        const mostActiveDayIdx = weeklyData.indexOf(maxDayValue);
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const dayLabel = mostActiveDayIdx >= 0 && maxDayValue > 0
+            ? dayNames[mostActiveDayIdx]
+            : '-';
+
+        return {
+            sessionCount: sessions.length,
+            avgSessionMs: Math.round(totalDuration / sessions.length),
+            longestSessionMs: longestSession,
+            mostActiveHour: hourLabel,
+            mostActiveDay: dayLabel
+        };
+    },
+
+    renderBarChart(data, maxValue, color, goalMs, isMinimize = false) {
         const chartWidth = 700;
         const chartHeight = 150;
         const barPadding = 4;
@@ -426,10 +538,17 @@ const GraphsModule = {
             const x = i * (barWidth + barPadding) + barPadding / 2;
             const y = chartHeight - barHeight - 25;
 
-            // Determine goal achievement class
+            // Determine goal achievement class based on direction
             let goalClass = 'goal-below';
-            if (d.value >= goalMs) goalClass = 'goal-met';
-            else if (d.value >= goalMs * 0.8) goalClass = 'goal-close';
+            if (isMinimize) {
+                // For minimize: below or at goal is good
+                if (d.value > 0 && d.value <= goalMs) goalClass = 'goal-met';
+                else if (d.value <= goalMs * 1.2) goalClass = 'goal-close';
+            } else {
+                // For maximize: at or above goal is good
+                if (d.value >= goalMs) goalClass = 'goal-met';
+                else if (d.value >= goalMs * 0.8) goalClass = 'goal-close';
+            }
 
             bars += `
                 <rect 
@@ -484,7 +603,7 @@ const GraphsModule = {
         `;
     },
 
-    renderLineChart(data, maxValue, color, goalMs) {
+    renderLineChart(data, maxValue, color, goalMs, isMinimize = false) {
         const chartWidth = 700;
         const chartHeight = 150;
         const padding = { top: 10, right: 10, bottom: 25, left: 10 };
@@ -499,9 +618,17 @@ const GraphsModule = {
         const points = data.map((d, i) => {
             const x = padding.left + (i / Math.max(data.length - 1, 1)) * plotWidth;
             const y = padding.top + plotHeight - (maxValue > 0 ? (d.value / maxValue) * plotHeight : 0);
+
+            // Goal class based on direction
             let goalClass = 'goal-below';
-            if (d.value >= goalMs) goalClass = 'goal-met';
-            else if (d.value >= goalMs * 0.8) goalClass = 'goal-close';
+            if (isMinimize) {
+                if (d.value > 0 && d.value <= goalMs) goalClass = 'goal-met';
+                else if (d.value <= goalMs * 1.2) goalClass = 'goal-close';
+            } else {
+                if (d.value >= goalMs) goalClass = 'goal-met';
+                else if (d.value >= goalMs * 0.8) goalClass = 'goal-close';
+            }
+
             return { x, y, date: d.date, value: d.value, goalClass };
         });
 
@@ -513,18 +640,19 @@ const GraphsModule = {
         // Line path
         const linePath = `M ${points.map(p => `${p.x} ${p.y}`).join(' L ')}`;
 
-        // Data points
+        // Data points - REQ-3: Only show marker for the most recent data point
         let circles = '';
-        points.forEach(p => {
-            circles += `
-                <circle class="graph-point ${p.goalClass}" 
-                    cx="${p.x}" cy="${p.y}" r="4" 
+        if (points.length > 0) {
+            const lastPoint = points[points.length - 1];
+            circles = `
+                <circle class="graph-point ${lastPoint.goalClass}" 
+                    cx="${lastPoint.x}" cy="${lastPoint.y}" r="5" 
                     stroke="${color}"
-                    data-date="${p.date}"
-                    data-value="${p.value}"
+                    data-date="${lastPoint.date}"
+                    data-value="${lastPoint.value}"
                 />
             `;
-        });
+        }
 
         // Goal line
         let goalLine = '';
@@ -576,32 +704,83 @@ const GraphsModule = {
         });
     },
 
-    getDateRange(range) {
+    getDateRange(range, stopwatchId = null) {
         const history = StorageManager.getHistory();
+        const stopwatches = StorageManager.getStopwatches();
         const today = new Date();
+        today.setHours(23, 59, 59, 999); // End of today
         let startDate;
 
+        // Get the effective earliest date considering account and category creation
+        const accountCreatedAt = StorageManager.getAccountCreatedAt();
+        let boundaryDate = accountCreatedAt ? new Date(accountCreatedAt) : new Date();
+        boundaryDate.setHours(0, 0, 0, 0);
+
+        // If viewing a specific stopwatch, use its creation date
+        if (stopwatchId) {
+            const sw = stopwatches.find(s => s.id === stopwatchId);
+            if (sw && sw.createdAt) {
+                const swCreatedAt = new Date(sw.createdAt);
+                swCreatedAt.setHours(0, 0, 0, 0);
+                if (swCreatedAt > boundaryDate) {
+                    boundaryDate = swCreatedAt;
+                }
+            }
+        } else {
+            // For overview, use earliest visible category date
+            const visibleStopwatches = this.showDeleted
+                ? stopwatches
+                : stopwatches.filter(sw => !sw.deleted);
+
+            let earliestCategoryDate = null;
+            visibleStopwatches.forEach(sw => {
+                if (sw.createdAt) {
+                    const swDate = new Date(sw.createdAt);
+                    swDate.setHours(0, 0, 0, 0);
+                    if (!earliestCategoryDate || swDate < earliestCategoryDate) {
+                        earliestCategoryDate = swDate;
+                    }
+                }
+            });
+
+            if (earliestCategoryDate && earliestCategoryDate > boundaryDate) {
+                boundaryDate = earliestCategoryDate;
+            }
+        }
+
         if (range === 'all') {
-            // Find the earliest date in history
+            // Find the earliest date (but not before boundary)
             if (history.length === 0) {
-                startDate = new Date(today);
-                startDate.setDate(startDate.getDate() - 30);
+                startDate = new Date(boundaryDate);
             } else {
-                const earliestDate = history.reduce((min, h) => {
+                const earliestHistoryDate = history.reduce((min, h) => {
                     const d = new Date(h.date);
                     return d < min ? d : min;
                 }, new Date());
-                startDate = earliestDate;
+                startDate = earliestHistoryDate < boundaryDate ? boundaryDate : earliestHistoryDate;
             }
         } else {
             startDate = new Date(today);
             startDate.setDate(startDate.getDate() - range + 1);
+            startDate.setHours(0, 0, 0, 0);
+
+            // Don't go before boundary date
+            if (startDate < boundaryDate) {
+                startDate = new Date(boundaryDate);
+            }
         }
 
         const dates = [];
         const currentDate = new Date(startDate);
+        currentDate.setHours(0, 0, 0, 0);
+
+        // REQ-2: Only include dates up to today (no future dates)
+        const todayStr = getDateString(new Date());
         while (currentDate <= today) {
-            dates.push(getDateString(currentDate));
+            const dateStr = getDateString(currentDate);
+            if (dateStr <= todayStr) {
+                dates.push(dateStr);
+            }
             currentDate.setDate(currentDate.getDate() + 1);
         }
 
@@ -711,6 +890,115 @@ const GraphsModule = {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    },
+
+    // REQ-7: Add event listeners for per-category range selectors
+    addCategoryRangeListeners() {
+        this.elements.container.querySelectorAll('.category-range-select').forEach(select => {
+            select.addEventListener('change', (e) => {
+                const graphId = e.target.dataset.graphId;
+                const newRange = e.target.value === 'all' ? 'all' : parseInt(e.target.value);
+                this.categoryRanges[graphId] = newRange;
+                this.render();
+            });
+        });
+    },
+
+    /**
+     * Render hourly heatmap for a stopwatch showing when work happens
+     */
+    renderHourlyHeatmap(stopwatchId, swName, swColor, days = 30) {
+        const hourlyData = StorageManager.getSessionsByHour(stopwatchId, days);
+        const maxValue = Math.max(...hourlyData, 1);
+
+        const hours = ['12a', '1a', '2a', '3a', '4a', '5a', '6a', '7a', '8a', '9a', '10a', '11a',
+            '12p', '1p', '2p', '3p', '4p', '5p', '6p', '7p', '8p', '9p', '10p', '11p'];
+
+        const cells = hourlyData.map((value, hour) => {
+            const intensity = maxValue > 0 ? value / maxValue : 0;
+            const opacity = 0.1 + (intensity * 0.8);
+            return `
+                <div class="heatmap-cell" 
+                     style="background: ${swColor}; opacity: ${opacity};"
+                     title="${hours[hour]}: ${formatTimeShort(value)}">
+                </div>
+            `;
+        }).join('');
+
+        const labels = hours.filter((_, i) => i % 4 === 0).map((h, i) =>
+            `<span class="heatmap-hour-label">${h}</span>`
+        ).join('');
+
+        return `
+            <div class="session-analysis-card">
+                <div class="session-analysis-header">
+                    <span class="session-analysis-title">Hourly Pattern: ${this.escapeHtml(swName)}</span>
+                    <span class="session-analysis-subtitle">Last ${days} days</span>
+                </div>
+                <div class="heatmap-container">
+                    <div class="heatmap-grid">${cells}</div>
+                    <div class="heatmap-labels">${labels}</div>
+                </div>
+            </div>
+        `;
+    },
+
+    /**
+     * Render weekly pattern for a stopwatch
+     */
+    renderWeeklyPattern(stopwatchId, swName, swColor, days = 30) {
+        const weeklyData = StorageManager.getSessionsByDayOfWeek(stopwatchId, days);
+        const maxValue = Math.max(...weeklyData, 1);
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+        const bars = weeklyData.map((value, day) => {
+            const height = maxValue > 0 ? (value / maxValue) * 100 : 0;
+            return `
+                <div class="weekly-bar-container">
+                    <div class="weekly-bar" 
+                         style="height: ${height}%; background: ${swColor};"
+                         title="${dayNames[day]}: ${formatTimeShort(value)}">
+                    </div>
+                    <span class="weekly-day-label">${dayNames[day]}</span>
+                </div>
+            `;
+        }).join('');
+
+        return `
+            <div class="session-analysis-card">
+                <div class="session-analysis-header">
+                    <span class="session-analysis-title">Weekly Pattern: ${this.escapeHtml(swName)}</span>
+                    <span class="session-analysis-subtitle">Last ${days} days</span>
+                </div>
+                <div class="weekly-chart">${bars}</div>
+            </div>
+        `;
+    },
+
+    /**
+     * Render session analysis section for Waste Time
+     */
+    renderWasteTimeAnalysis() {
+        const WASTE_TIME_ID = 'waste-time-builtin';
+        const sessions = StorageManager.getSessionsForStopwatch(WASTE_TIME_ID, 30);
+
+        if (sessions.length === 0) {
+            return `
+                <div class="session-analysis-empty">
+                    <p>No waste time sessions recorded yet. Sessions will appear here as you use the app.</p>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="waste-time-analysis">
+                <h3 class="analysis-section-title">📊 Waste Time Analysis</h3>
+                <div class="analysis-grid">
+                    ${this.renderHourlyHeatmap(WASTE_TIME_ID, 'Waste Time', '#ef4444', 30)}
+                    ${this.renderWeeklyPattern(WASTE_TIME_ID, 'Waste Time', '#ef4444', 30)}
+                </div>
+            </div>
+        `;
     },
 
     refresh() {

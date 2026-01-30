@@ -8,6 +8,9 @@ const App = {
     init() {
         console.log('Time Vault initializing...');
 
+        // Initialize account creation date (for graph boundaries)
+        StorageManager.initAccountCreatedAt();
+
         // Request notification permission
         if ('Notification' in window && Notification.permission === 'default') {
             Notification.requestPermission();
@@ -22,6 +25,8 @@ const App = {
         TimerModule.init();
         StopwatchModule.init();
         AdvancedStopwatchesModule.init();
+        TasksModule.init();
+        DailysModule.init();
         GraphsModule.init();
 
         // Set up navigation
@@ -40,7 +45,36 @@ const App = {
             StorageManager.saveLastCloseTime();
         }, 60000); // Every minute
 
+        // Set up theme toggle
+        this.setupThemeToggle();
+
         console.log('Time Vault initialized successfully!');
+    },
+
+    setupThemeToggle() {
+        const toggle = document.getElementById('theme-toggle');
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+
+        // Apply saved theme on load
+        if (savedTheme === 'light') {
+            document.body.classList.add('light-theme');
+            this.updateThemeIcon(true);
+        }
+
+        toggle?.addEventListener('click', () => {
+            const isLight = document.body.classList.toggle('light-theme');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            this.updateThemeIcon(isLight);
+        });
+    },
+
+    updateThemeIcon(isLight) {
+        const darkIcon = document.querySelector('.theme-icon-dark');
+        const lightIcon = document.querySelector('.theme-icon-light');
+        if (darkIcon && lightIcon) {
+            darkIcon.style.display = isLight ? 'none' : 'block';
+            lightIcon.style.display = isLight ? 'block' : 'none';
+        }
     },
 
     setupNavigation() {

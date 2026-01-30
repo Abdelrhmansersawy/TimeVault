@@ -8,8 +8,12 @@ const StorageManager = {
         ALARMS: 'focusclock_alarms',
         STOPWATCHES: 'focusclock_stopwatches',
         HISTORY: 'focusclock_history',
+        SESSIONS: 'focusclock_sessions',  // Individual work intervals
         SETTINGS: 'focusclock_settings',
-        LAST_CLOSE: 'focusclock_last_close'
+        LAST_CLOSE: 'focusclock_last_close',
+        ACCOUNT_CREATED: 'focusclock_account_created',
+        DAILYS: 'focusclock_dailys',      // Daily journal entries
+        TASKS: 'focusclock_tasks'         // Task database
     },
 
     /**
@@ -166,6 +170,131 @@ const StorageManager = {
     },
 
     // ============================================
+    // Sessions (individual work intervals)
+    // ============================================
+
+    getSessions() {
+        return this.get(this.KEYS.SESSIONS, []);
+    },
+
+    saveSessions(sessions) {
+        return this.set(this.KEYS.SESSIONS, sessions);
+    },
+
+    /**
+     * Start a new session for a stopwatch
+     * @param {string} stopwatchId 
+     * @param {number} startTime - Unix timestamp
+     */
+    startSession(stopwatchId, startTime = Date.now()) {
+        const sessions = this.getSessions();
+        sessions.push({
+            id: generateId(),
+            stopwatchId,
+            startTime,
+            endTime: null,
+            durationMs: 0
+        });
+        return this.saveSessions(sessions);
+    },
+
+    /**
+     * End the current session for a stopwatch
+     * @param {string} stopwatchId 
+     * @param {number} endTime - Unix timestamp
+     */
+    endSession(stopwatchId, endTime = Date.now()) {
+        const sessions = this.getSessions();
+        // Find the most recent open session for this stopwatch
+        const openSession = sessions.filter(
+            s => s.stopwatchId === stopwatchId && s.endTime === null
+        ).pop();
+
+        if (openSession) {
+            openSession.endTime = endTime;
+            openSession.durationMs = endTime - openSession.startTime;
+            return this.saveSessions(sessions);
+        }
+        return false;
+    },
+
+    /**
+     * Add a completed session (for offline waste time)
+     */
+    addCompletedSession(stopwatchId, startTime, endTime) {
+        const sessions = this.getSessions();
+        sessions.push({
+            id: generateId(),
+            stopwatchId,
+            startTime,
+            endTime,
+            durationMs: endTime - startTime
+        });
+        return this.saveSessions(sessions);
+    },
+
+    /**
+     * Get sessions for a specific stopwatch within date range
+     */
+    getSessionsForStopwatch(stopwatchId, days = 30) {
+        const sessions = this.getSessions();
+        const cutoffTime = Date.now() - (days * 24 * 60 * 60 * 1000);
+
+        return sessions.filter(s =>
+            s.stopwatchId === stopwatchId &&
+            s.startTime >= cutoffTime
+        );
+    },
+
+    /**
+     * Get session aggregates by hour (0-23) for heatmap
+     */
+    getSessionsByHour(stopwatchId, days = 30) {
+        const sessions = this.getSessionsForStopwatch(stopwatchId, days);
+        const hourlyData = new Array(24).fill(0);
+
+        sessions.forEach(s => {
+            if (s.endTime) {
+                const startDate = new Date(s.startTime);
+                const endDate = new Date(s.endTime);
+
+                // Simple: attribute to start hour
+                const hour = startDate.getHours();
+                hourlyData[hour] += s.durationMs;
+            }
+        });
+
+        return hourlyData;
+    },
+
+    /**
+     * Get session aggregates by day of week (0=Sun, 6=Sat)
+     */
+    getSessionsByDayOfWeek(stopwatchId, days = 30) {
+        const sessions = this.getSessionsForStopwatch(stopwatchId, days);
+        const weeklyData = new Array(7).fill(0);
+
+        sessions.forEach(s => {
+            if (s.endTime) {
+                const day = new Date(s.startTime).getDay();
+                weeklyData[day] += s.durationMs;
+            }
+        });
+
+        return weeklyData;
+    },
+
+    /**
+     * Cleanup old sessions (older than 90 days by default)
+     */
+    cleanupOldSessions(days = 90) {
+        const sessions = this.getSessions();
+        const cutoffTime = Date.now() - (days * 24 * 60 * 60 * 1000);
+        const filtered = sessions.filter(s => s.startTime >= cutoffTime);
+        return this.saveSessions(filtered);
+    },
+
+    // ============================================
     // Settings
     // ============================================
 
@@ -190,12 +319,217 @@ const StorageManager = {
     // App State
     // ============================================
 
-    getLastCloseTime() {
+    /**
+     * Get last close data (timestamp and running stopwatch)
+     * @returns {{timestamp: number, runningStopwatchId: string|null}|null}
+     */
+    getLastCloseData() {
         return this.get(this.KEYS.LAST_CLOSE, null);
     },
 
+    /**
+     * Save close data including timestamp and running stopwatch ID
+     * @param {string|null} runningStopwatchId - ID of the stopwatch running at close
+     */
+    saveLastCloseData(runningStopwatchId = null) {
+        return this.set(this.KEYS.LAST_CLOSE, {
+            timestamp: Date.now(),
+            runningStopwatchId
+        });
+    },
+
+    // Legacy methods for backward compatibility
+    getLastCloseTime() {
+        const data = this.getLastCloseData();
+        // Handle both old format (number) and new format (object)
+        if (typeof data === 'number') return data;
+        return data?.timestamp || null;
+    },
+
     saveLastCloseTime() {
-        return this.set(this.KEYS.LAST_CLOSE, Date.now());
+        // Find which stopwatch is currently running
+        const stopwatches = this.getStopwatches();
+        const running = stopwatches.find(sw => sw.isRunning && !sw.deleted);
+        return this.saveLastCloseData(running?.id || null);
+    },
+
+    // ============================================
+    // Account Creation (for graph boundaries)
+    // ============================================
+
+    getAccountCreatedAt() {
+        return this.get(this.KEYS.ACCOUNT_CREATED, null);
+    },
+
+    /**
+     * Initialize account creation date if not set.
+     * Uses earliest stopwatch creation date or current date.
+     */
+    initAccountCreatedAt() {
+        if (this.getAccountCreatedAt()) return; // Already set
+
+        // Find earliest stopwatch creation date
+        const stopwatches = this.getStopwatches();
+        let earliestDate = Date.now();
+
+        stopwatches.forEach(sw => {
+            if (sw.createdAt && sw.createdAt < earliestDate) {
+                earliestDate = sw.createdAt;
+            }
+        });
+
+        this.set(this.KEYS.ACCOUNT_CREATED, earliestDate);
+    },
+
+    // ============================================
+    // Daily Journal Methods
+    // ============================================
+
+    /**
+     * Get all daily journal entries
+     */
+    getDailys() {
+        return this.get(this.KEYS.DAILYS, {});
+    },
+
+    /**
+     * Get a specific daily entry by date
+     * @param {string} dateStr - Date string (YYYY-MM-DD)
+     */
+    getDailyEntry(dateStr) {
+        const dailys = this.getDailys();
+        return dailys[dateStr] || null;
+    },
+
+    /**
+     * Save a daily entry
+     * @param {string} dateStr - Date string (YYYY-MM-DD)
+     * @param {object} entry - Entry data
+     */
+    saveDailyEntry(dateStr, entry) {
+        const dailys = this.getDailys();
+        dailys[dateStr] = {
+            ...entry,
+            date: dateStr,
+            updatedAt: Date.now()
+        };
+        if (!entry.createdAt) {
+            dailys[dateStr].createdAt = Date.now();
+        }
+        return this.set(this.KEYS.DAILYS, dailys);
+    },
+
+    /**
+     * Get daily entries for a date range
+     * @param {number} days - Number of days to look back
+     */
+    getRecentDailys(days = 30) {
+        const dailys = this.getDailys();
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - days);
+        const cutoffStr = getDateString(cutoff);
+
+        return Object.entries(dailys)
+            .filter(([date]) => date >= cutoffStr)
+            .sort(([a], [b]) => b.localeCompare(a))
+            .map(([, entry]) => entry);
+    },
+
+    // ============================================
+    // Task Database Methods
+    // ============================================
+
+    /**
+     * Get all tasks
+     */
+    getTasks() {
+        return this.get(this.KEYS.TASKS, []);
+    },
+
+    /**
+     * Save all tasks
+     */
+    saveTasks(tasks) {
+        return this.set(this.KEYS.TASKS, tasks);
+    },
+
+    /**
+     * Add a new task
+     */
+    addTask(task) {
+        const tasks = this.getTasks();
+        const newTask = {
+            id: generateId(),
+            title: task.title || '',
+            description: task.description || '',
+            subtasks: task.subtasks || [],
+            tags: task.tags || [],
+            priority: task.priority || 'medium',
+            status: task.status || 'todo',
+            assignedStopwatch: task.assignedStopwatch || null,
+            createdAt: Date.now(),
+            completedAt: null
+        };
+        tasks.push(newTask);
+        this.saveTasks(tasks);
+        return newTask;
+    },
+
+    /**
+     * Update a task
+     */
+    updateTask(taskId, updates) {
+        const tasks = this.getTasks();
+        const index = tasks.findIndex(t => t.id === taskId);
+        if (index !== -1) {
+            tasks[index] = { ...tasks[index], ...updates };
+            if (updates.status === 'done' && !tasks[index].completedAt) {
+                tasks[index].completedAt = Date.now();
+            }
+            this.saveTasks(tasks);
+            return tasks[index];
+        }
+        return null;
+    },
+
+    /**
+     * Delete a task
+     */
+    deleteTask(taskId) {
+        const tasks = this.getTasks();
+        const filtered = tasks.filter(t => t.id !== taskId);
+        this.saveTasks(filtered);
+    },
+
+    /**
+     * Get tasks by status
+     */
+    getTasksByStatus(status) {
+        return this.getTasks().filter(t => t.status === status);
+    },
+
+    /**
+     * Get tasks assigned to a stopwatch
+     */
+    getTasksByStopwatch(stopwatchId) {
+        return this.getTasks().filter(t => t.assignedStopwatch === stopwatchId);
+    },
+
+    /**
+     * Toggle subtask completion
+     */
+    toggleSubtask(taskId, subtaskId) {
+        const tasks = this.getTasks();
+        const task = tasks.find(t => t.id === taskId);
+        if (task) {
+            const subtask = task.subtasks.find(s => s.id === subtaskId);
+            if (subtask) {
+                subtask.completed = !subtask.completed;
+                this.saveTasks(tasks);
+                return subtask;
+            }
+        }
+        return null;
     }
 };
 
