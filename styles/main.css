@@ -85,6 +85,84 @@
     --z-toast: 300;
 }
 
+/* Light Theme Variables */
+body.light-theme {
+    /* Colors - Light Mode */
+    --color-bg-primary: #f5f5f7;
+    --color-bg-secondary: #ffffff;
+    --color-bg-tertiary: #e8e8ed;
+    --color-bg-card: rgba(255, 255, 255, 0.8);
+    --color-bg-card-hover: rgba(245, 245, 247, 0.9);
+
+    --color-text-primary: #1a1a2e;
+    --color-text-secondary: #55556d;
+    --color-text-muted: #8888a0;
+
+    --color-border: rgba(0, 0, 0, 0.08);
+    --color-border-focus: rgba(99, 102, 241, 0.5);
+
+    /* Gradients - Light Mode */
+    --gradient-card: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 248, 252, 0.8) 100%);
+    --gradient-glow: radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.1) 0%, transparent 50%);
+
+    /* Shadows - Light Mode */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+    --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.15);
+    --shadow-glow: 0 0 40px rgba(99, 102, 241, 0.2);
+
+    /* Direct style overrides for body */
+    background: #f5f5f7 !important;
+    color: #1a1a2e !important;
+}
+
+/* Light theme specific overrides */
+body.light-theme .main-nav {
+    background: rgba(255, 255, 255, 0.95) !important;
+    border-bottom-color: rgba(0, 0, 0, 0.1);
+}
+
+body.light-theme .nav-tabs {
+    background: #e8e8ed;
+}
+
+body.light-theme .nav-tab:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+body.light-theme .brand-text {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+body.light-theme .card,
+body.light-theme .graph-card,
+body.light-theme .stopwatch-card,
+body.light-theme .modal-content {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+body.light-theme .form-input,
+body.light-theme .select-input {
+    background: #ffffff !important;
+    border-color: rgba(0, 0, 0, 0.15);
+    color: #1a1a2e;
+}
+
+body.light-theme .btn-secondary {
+    background: #e8e8ed;
+    color: #1a1a2e;
+}
+
+body.light-theme .toast {
+    background: #1a1a2e;
+    color: #ffffff;
+}
+
 /* Reset & Base Styles */
 *,
 *::before,
