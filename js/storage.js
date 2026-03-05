@@ -462,6 +462,7 @@ const StorageManager = {
         const newTask = {
             id: generateId(),
             title: task.title || '',
+            category: task.category || '',
             description: task.description || '',
             subtasks: task.subtasks || [],
             tags: task.tags || [],

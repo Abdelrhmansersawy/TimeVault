@@ -49,6 +49,7 @@ const DailysModule = {
     activeTimer: null,       // { taskName, startTime, isBreak, dateStr }
     timerIntervalId: null,
     timeLogDate: null,       // Separate date for time log page
+    _syncing: false,         // Prevents infinite sync loops with Focus module
 
     init() {
         this.elements.container = document.getElementById('dailys-section');
@@ -104,7 +105,46 @@ const DailysModule = {
 
         // Allow Enter key on task input to start
         this.elements.timeLogTaskInput?.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') this.startTask();
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const dropdown = document.getElementById('task-picker-dropdown');
+                if (dropdown?.classList.contains('open')) {
+                    // Select highlighted item or first item
+                    const highlighted = dropdown.querySelector('.task-picker-item.highlighted');
+                    if (highlighted) {
+                        highlighted.click();
+                    } else {
+                        this.startTask();
+                    }
+                } else {
+                    this.startTask();
+                }
+            } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                this.navigateDropdown(e.key === 'ArrowDown' ? 1 : -1);
+            } else if (e.key === 'Escape') {
+                this.closeTaskDropdown();
+            }
+        });
+
+        // Show dropdown on input focus/input
+        this.elements.timeLogTaskInput?.addEventListener('focus', () => this.showTaskDropdown());
+        this.elements.timeLogTaskInput?.addEventListener('input', () => this.showTaskDropdown());
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            const wrapper = document.querySelector('.task-picker-wrapper');
+            if (wrapper && !wrapper.contains(e.target)) {
+                this.closeTaskDropdown();
+            }
+        });
+
+        // Quick task form
+        document.getElementById('quick-task-save')?.addEventListener('click', () => this.quickCreateAndStart());
+        document.getElementById('quick-task-cancel')?.addEventListener('click', () => this.hideQuickTaskForm());
+        document.getElementById('quick-task-title')?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') this.quickCreateAndStart();
+            if (e.key === 'Escape') this.hideQuickTaskForm();
         });
 
         // Auto-save on text input change
@@ -168,7 +208,7 @@ const DailysModule = {
     /**
      * Start a task timer
      */
-    startTask(taskName) {
+    startTask(taskName, fromFocus = false) {
         const name = taskName || this.elements.timeLogTaskInput?.value.trim();
         if (!name) {
             App.showToast('Enter a task name first');
@@ -200,6 +240,19 @@ const DailysModule = {
 
         this.showActiveTimer();
         this.startTimerInterval();
+
+        // Sync: auto-start Focus stopwatch (unless this call came from Focus)
+        if (!fromFocus && !this._syncing && typeof AdvancedStopwatchesModule !== 'undefined') {
+            this._syncing = true;
+            const sw = AdvancedStopwatchesModule.stopwatches.find(
+                s => s.id !== WASTE_TIME_ID && !s.deleted
+            );
+            if (sw) {
+                AdvancedStopwatchesModule.startStopwatch(sw.id, true, true);
+            }
+            this._syncing = false;
+        }
+
         App.showToast(`Started: ${name}`);
     },
 
@@ -232,7 +285,7 @@ const DailysModule = {
     /**
      * Stop the current timer and log the entry
      */
-    stopCurrentTimer(silent = false) {
+    stopCurrentTimer(silent = false, fromFocus = false) {
         if (!this.activeTimer) return;
 
         const endTime = Date.now();
@@ -248,6 +301,18 @@ const DailysModule = {
         StorageManager.addTimeLogEntry(this.activeTimer.dateStr, entry);
 
         const wasBreak = this.activeTimer.isBreak;
+
+        // Sync: stop Focus stopwatch (unless this call came from Focus)
+        if (!wasBreak && !fromFocus && !this._syncing && typeof AdvancedStopwatchesModule !== 'undefined') {
+            this._syncing = true;
+            const runningSw = AdvancedStopwatchesModule.stopwatches.find(
+                s => s.isRunning && s.id !== WASTE_TIME_ID && !s.deleted
+            );
+            if (runningSw) {
+                AdvancedStopwatchesModule.stopStopwatch(runningSw.id, true, true);
+            }
+            this._syncing = false;
+        }
 
         // Clear active timer
         this.activeTimer = null;
@@ -357,26 +422,32 @@ const DailysModule = {
                     <p>No time entries yet. Start a task to begin logging!</p>
                 </div>
             `;
+            this.renderLogOverview(entries);
             return;
         }
 
-        this.elements.timeLogEntries.innerHTML = entries.map(entry => {
+        this.elements.timeLogEntries.innerHTML = [...entries].reverse().map(entry => {
             const startStr = this.formatTime12h(entry.startTime);
             const endStr = this.formatTime12h(entry.endTime);
             const duration = entry.endTime - entry.startTime;
-            const durationStr = this.formatDurationShort(duration);
+            const durationStr = this.formatDurationReadable(duration);
+            const durationShort = this.formatDurationShort(duration);
             const displayName = entry.isBreak
-                ? `==${this.escapeHtml(entry.taskName)}==`
+                ? this.escapeHtml(entry.taskName)
                 : this.escapeHtml(entry.taskName);
 
             return `
                 <div class="time-log-entry ${entry.isBreak ? 'is-break' : ''}" data-entry-id="${entry.id}">
-                    <span class="time-log-entry-time">${startStr} to ${endStr}</span>
-                    <span class="time-log-entry-separator">:</span>
-                    <span class="time-log-entry-name">${displayName}</span>
-                    <span class="time-log-entry-duration">${durationStr}</span>
+                    <div class="tl-entry-node ${entry.isBreak ? 'break' : 'task'}"></div>
+                    <div class="tl-entry-content">
+                        <div class="tl-entry-header">
+                            <span class="tl-entry-name">${entry.isBreak ? 'Break' : displayName}</span>
+                            <span class="tl-entry-dur">${durationShort}</span>
+                        </div>
+                        <div class="tl-entry-time">${startStr} — ${endStr}</div>
+                    </div>
                     <button class="time-log-entry-delete" data-delete-entry="${entry.id}" title="Delete entry">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <line x1="18" y1="6" x2="6" y2="18"></line>
                             <line x1="6" y1="6" x2="18" y2="18"></line>
                         </svg>
@@ -391,6 +462,82 @@ const DailysModule = {
                 this.deleteTimeLogEntry(btn.dataset.deleteEntry);
             });
         });
+
+        // Render overview stats
+        this.renderLogOverview(entries);
+    },
+
+    /**
+     * Render analytics overview panel
+     */
+    renderLogOverview(entries) {
+        const dateStr = getDateString(this.timeLogDate);
+        const isToday = dateStr === getDateString(new Date());
+
+        let totalMs = 0;
+        let studyMs = 0;
+        let wasteMs = 0;
+        let breakMs = 0;
+
+        entries.forEach(e => {
+            const dur = e.endTime - e.startTime;
+            totalMs += dur;
+            if (e.isBreak) {
+                breakMs += dur;
+            } else {
+                studyMs += dur;
+            }
+        });
+
+        // Get waste time from the waste stopwatch for today
+        if (isToday && typeof AdvancedStopwatchesModule !== 'undefined') {
+            const wasteSw = AdvancedStopwatchesModule.stopwatches.find(sw => sw.id === WASTE_TIME_ID);
+            if (wasteSw) {
+                wasteMs = TimeTracker.getElapsedMs(wasteSw);
+            }
+        }
+
+        // Tasks completed today
+        const tasks = StorageManager.getTasks();
+        const todayStart = new Date(this.timeLogDate);
+        todayStart.setHours(0, 0, 0, 0);
+        const todayEnd = new Date(this.timeLogDate);
+        todayEnd.setHours(23, 59, 59, 999);
+        const tasksDone = tasks.filter(t =>
+            t.status === 'done' && t.completedAt &&
+            t.completedAt >= todayStart.getTime() && t.completedAt <= todayEnd.getTime()
+        ).length;
+
+        // Remaining time in day (only for today)
+        let remainingStr = '—';
+        if (isToday) {
+            const now = new Date();
+            const endOfDay = new Date();
+            endOfDay.setHours(23, 59, 59, 999);
+            const remainMs = endOfDay.getTime() - now.getTime();
+            remainingStr = this.formatDurationReadable(remainMs);
+        }
+
+        // Update DOM
+        const el = (id) => document.getElementById(id);
+        if (el('stat-elapsed')) el('stat-elapsed').textContent = this.formatDurationReadable(totalMs);
+        if (el('stat-study')) el('stat-study').textContent = this.formatDurationReadable(studyMs);
+        if (el('stat-waste')) el('stat-waste').textContent = this.formatDurationReadable(wasteMs);
+        if (el('stat-tasks-done')) el('stat-tasks-done').textContent = tasksDone;
+        if (el('stat-remaining')) el('stat-remaining').textContent = remainingStr;
+        if (el('stat-sessions')) el('stat-sessions').textContent = entries.length;
+    },
+
+    /**
+     * Format duration as readable "Xh Ym"
+     */
+    formatDurationReadable(ms) {
+        if (ms < 0) ms = 0;
+        const totalMins = Math.floor(ms / 60000);
+        const h = Math.floor(totalMins / 60);
+        const m = totalMins % 60;
+        if (h === 0) return `${m}m`;
+        return `${h}h ${m}m`;
     },
 
     /**
@@ -464,7 +611,184 @@ const DailysModule = {
             }
         }
 
+        // Populate task autocomplete from Tasks DB
+        this.populateTaskSuggestions();
+
         this.renderTimeLog();
+    },
+
+    /**
+     * Populate the task suggestions datalist from the Tasks database
+     */
+    populateTaskSuggestions() {
+        // Handled by showTaskDropdown now
+    },
+
+    /**
+     * Show the task picker dropdown with tasks from the Tasks database
+     */
+    showTaskDropdown() {
+        const dropdown = document.getElementById('task-picker-dropdown');
+        if (!dropdown) return;
+
+        const query = (this.elements.timeLogTaskInput?.value || '').toLowerCase().trim();
+        const tasks = StorageManager.getTasks().filter(t => t.status !== 'done');
+
+        // Filter tasks by search query
+        const filtered = query
+            ? tasks.filter(t => t.title.toLowerCase().includes(query))
+            : tasks;
+
+        const priorityColors = { low: '#22c55e', medium: '#eab308', high: '#ef4444' };
+
+        let html = '';
+
+        // Show matching tasks
+        filtered.forEach(task => {
+            const tags = (task.tags || []).map(t =>
+                `<span class="task-tag">${this.escapeHtml(t)}</span>`
+            ).join('');
+
+            html += `
+                <div class="task-picker-item" data-task-title="${this.escapeHtml(task.title)}">
+                    ${task.priority ? `<span class="priority-dot" style="background: ${priorityColors[task.priority]}"></span>` : ''}
+                    <span class="task-title">${this.escapeHtml(task.title)}</span>
+                    ${tags ? `<span class="task-tags">${tags}</span>` : ''}
+                </div>
+            `;
+        });
+
+        // "+ New Task" option
+        html += `
+            <div class="task-picker-item task-picker-new" data-action="new-task">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                <span>New Task</span>
+            </div>
+        `;
+
+        // If there's typed text that doesn't match any task, show "Use as free text"
+        if (query && !tasks.some(t => t.title.toLowerCase() === query)) {
+            html += `
+                <div class="task-picker-item task-picker-freetext" data-task-title="${this.escapeHtml(this.elements.timeLogTaskInput.value.trim())}">
+                    Start "${this.escapeHtml(this.elements.timeLogTaskInput.value.trim())}" as free text
+                </div>
+            `;
+        }
+
+        dropdown.innerHTML = html;
+        dropdown.classList.add('open');
+
+        // Add click listeners
+        dropdown.querySelectorAll('.task-picker-item').forEach(item => {
+            item.addEventListener('click', () => {
+                if (item.dataset.action === 'new-task') {
+                    this.showQuickTaskForm();
+                    this.closeTaskDropdown();
+                } else if (item.dataset.taskTitle) {
+                    this.elements.timeLogTaskInput.value = item.dataset.taskTitle;
+                    this.closeTaskDropdown();
+                    this.startTask();
+                }
+            });
+        });
+    },
+
+    /**
+     * Close the task picker dropdown
+     */
+    closeTaskDropdown() {
+        const dropdown = document.getElementById('task-picker-dropdown');
+        if (dropdown) dropdown.classList.remove('open');
+    },
+
+    /**
+     * Navigate dropdown items with arrow keys
+     */
+    navigateDropdown(direction) {
+        const dropdown = document.getElementById('task-picker-dropdown');
+        if (!dropdown || !dropdown.classList.contains('open')) {
+            this.showTaskDropdown();
+            return;
+        }
+
+        const items = [...dropdown.querySelectorAll('.task-picker-item')];
+        if (items.length === 0) return;
+
+        const current = items.findIndex(i => i.classList.contains('highlighted'));
+        items.forEach(i => i.classList.remove('highlighted'));
+
+        let next = current + direction;
+        if (next < 0) next = items.length - 1;
+        if (next >= items.length) next = 0;
+
+        items[next].classList.add('highlighted');
+        items[next].scrollIntoView({ block: 'nearest' });
+    },
+
+    /**
+     * Show the quick task creation form
+     */
+    showQuickTaskForm() {
+        const form = document.getElementById('quick-task-form');
+        if (form) {
+            form.style.display = 'flex';
+            const titleInput = document.getElementById('quick-task-title');
+            // Pre-fill with whatever was typed in the search
+            if (titleInput && this.elements.timeLogTaskInput) {
+                titleInput.value = this.elements.timeLogTaskInput.value.trim();
+                this.elements.timeLogTaskInput.value = '';
+            }
+            titleInput?.focus();
+        }
+    },
+
+    /**
+     * Hide the quick task creation form
+     */
+    hideQuickTaskForm() {
+        const form = document.getElementById('quick-task-form');
+        if (form) form.style.display = 'none';
+    },
+
+    /**
+     * Create a new task and immediately start it
+     */
+    quickCreateAndStart() {
+        const titleInput = document.getElementById('quick-task-title');
+        const prioritySelect = document.getElementById('quick-task-priority');
+
+        const title = titleInput?.value.trim();
+        if (!title) {
+            App.showToast('Enter a task title');
+            titleInput?.focus();
+            return;
+        }
+
+        // Create the task in the Tasks database
+        const taskData = {
+            title,
+            description: '',
+            priority: prioritySelect?.value || '',
+            status: 'in-progress',
+            tags: [],
+            subtasks: [],
+            assignedStopwatch: null
+        };
+        StorageManager.addTask(taskData);
+
+        // Re-render Tasks tab if it exists
+        if (typeof TasksModule !== 'undefined') {
+            TasksModule.tasks = StorageManager.getTasks();
+            TasksModule.render();
+        }
+
+        // Hide form and start the task timer
+        this.hideQuickTaskForm();
+        this.startTask(title);
+        App.showToast(`Task created: ${title}`);
     },
 
     // ============================================

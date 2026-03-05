@@ -32,6 +32,7 @@ const AdvancedStopwatchesModule = {
     editingStopwatchId: null,
     updateIntervalId: null,
     wasteTimeCheckIntervalId: null, // Interval to check if waste time should auto-start
+    _syncing: false,                // Prevents infinite sync loops with Log module
 
     init() {
         this.elements.grid = document.getElementById('stopwatches-grid');
@@ -367,7 +368,7 @@ const AdvancedStopwatchesModule = {
         });
     },
 
-    startStopwatch(id, silent = false) {
+    startStopwatch(id, silent = false, fromLog = false) {
         // Single active stopwatch rule - stop all others (except waste time auto-management)
         this.stopwatches.forEach(sw => {
             if (sw.isRunning && sw.id !== id) {
@@ -391,12 +392,20 @@ const AdvancedStopwatchesModule = {
             if (!silent) {
                 App.showToast(`Started: ${sw.name}`);
             }
+
+            // Sync: auto-start Log entry (unless this call came from Log)
+            if (!fromLog && !this._syncing && id !== WASTE_TIME_ID && typeof DailysModule !== 'undefined') {
+                this._syncing = true;
+                DailysModule.startTask(sw.name, true);
+                this._syncing = false;
+            }
+
             // Trigger waste time check after any start
             this.checkWasteTimeAutoStart();
         }
     },
 
-    stopStopwatch(id, silent = false) {
+    stopStopwatch(id, silent = false, fromLog = false) {
         const sw = this.stopwatches.find(sw => sw.id === id);
         if (sw) {
             const stopped = TimeTracker.stopStopwatch(sw);
@@ -408,6 +417,14 @@ const AdvancedStopwatchesModule = {
             if (!silent) {
                 App.showToast(`Stopped: ${sw.name}`);
             }
+
+            // Sync: stop Log timer (unless this call came from Log)
+            if (!fromLog && !this._syncing && id !== WASTE_TIME_ID && typeof DailysModule !== 'undefined') {
+                this._syncing = true;
+                DailysModule.stopCurrentTimer(true, true);
+                this._syncing = false;
+            }
+
             // Trigger waste time check after any stop
             if (id !== WASTE_TIME_ID) {
                 setTimeout(() => this.checkWasteTimeAutoStart(), 100);

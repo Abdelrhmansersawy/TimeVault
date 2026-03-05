@@ -225,18 +225,6 @@
                 <div class="section-header">
                     <h2>Tasks</h2>
                     <div class="tasks-controls">
-                        <select id="filter-status" class="select-input">
-                            <option value="all">All Status</option>
-                            <option value="todo">To Do</option>
-                            <option value="in-progress">In Progress</option>
-                            <option value="done">Done</option>
-                        </select>
-                        <select id="filter-priority" class="select-input">
-                            <option value="all">All Priority</option>
-                            <option value="high">High</option>
-                            <option value="medium">Medium</option>
-                            <option value="low">Low</option>
-                        </select>
                         <button id="add-task-btn" class="btn btn-primary">
                             <span>+ New Task</span>
                         </button>
@@ -297,10 +285,55 @@
                     <!-- Start Controls -->
                     <div id="time-log-start-controls" class="time-log-controls">
                         <div class="time-log-input-row">
-                            <input type="text" id="time-log-task-input" class="form-input time-log-input"
-                                placeholder="What are you working on?">
-                            <button id="time-log-start-btn" class="btn btn-sm btn-primary">Start Task</button>
+                            <div class="task-picker-wrapper">
+                                <input type="text" id="time-log-task-input" class="form-input time-log-input"
+                                    placeholder="Search or pick a task..." autocomplete="off">
+                                <div id="task-picker-dropdown" class="task-picker-dropdown">
+                                    <!-- Dynamically populated -->
+                                </div>
+                            </div>
+                            <button id="time-log-start-btn" class="btn btn-sm btn-primary">Start</button>
                             <button id="time-log-break-btn" class="btn btn-sm btn-secondary">Break</button>
+                        </div>
+                        <!-- Inline New Task Form (hidden by default) -->
+                        <div id="quick-task-form" class="quick-task-form" style="display: none;">
+                            <input type="text" id="quick-task-title" class="form-input" placeholder="Task title">
+                            <select id="quick-task-priority" class="form-select">
+                                <option value="">Priority</option>
+                                <option value="low">Low</option>
+                                <option value="medium">Medium</option>
+                                <option value="high">High</option>
+                            </select>
+                            <button id="quick-task-save" class="btn btn-sm btn-primary">Create & Start</button>
+                            <button id="quick-task-cancel" class="btn btn-sm btn-ghost">Cancel</button>
+                        </div>
+                    </div>
+
+                    <!-- Day Overview Stats -->
+                    <div id="log-overview" class="log-overview">
+                        <div class="log-stat">
+                            <span class="log-stat-value" id="stat-elapsed">0h 0m</span>
+                            <span class="log-stat-label">Elapsed</span>
+                        </div>
+                        <div class="log-stat">
+                            <span class="log-stat-value stat-study" id="stat-study">0h 0m</span>
+                            <span class="log-stat-label">Study</span>
+                        </div>
+                        <div class="log-stat">
+                            <span class="log-stat-value stat-waste" id="stat-waste">0h 0m</span>
+                            <span class="log-stat-label">Waste</span>
+                        </div>
+                        <div class="log-stat">
+                            <span class="log-stat-value stat-done" id="stat-tasks-done">0</span>
+                            <span class="log-stat-label">Tasks Done</span>
+                        </div>
+                        <div class="log-stat">
+                            <span class="log-stat-value stat-remaining" id="stat-remaining">—</span>
+                            <span class="log-stat-label">Remaining</span>
+                        </div>
+                        <div class="log-stat">
+                            <span class="log-stat-value" id="stat-sessions">0</span>
+                            <span class="log-stat-label">Sessions</span>
                         </div>
                     </div>
 
@@ -444,6 +477,29 @@
                     <p class="empty-hint">Start using stopwatches to see your progress</p>
                 </div>
             </section>
+
+            <!-- Settings Section -->
+            <section id="settings-section" class="section">
+                <div class="section-header">
+                    <h2>Settings</h2>
+                </div>
+                <div class="settings-panel">
+                    <div class="settings-group">
+                        <h3 class="settings-group-title">Appearance</h3>
+                        <div class="setting-row">
+                            <span class="setting-label">Theme</span>
+                            <button class="btn btn-sm btn-ghost" id="theme-toggle-setting">Toggle Dark / Light</button>
+                        </div>
+                    </div>
+                    <div class="settings-group">
+                        <h3 class="settings-group-title">Keyboard Shortcuts</h3>
+                        <p class="settings-hint">Click a key binding to change it. Press the new key combination.</p>
+                        <div id="shortcuts-list" class="shortcuts-list"></div>
+                        <button class="btn btn-sm btn-ghost" id="shortcuts-reset-btn" style="margin-top: 12px;">Reset to
+                            Defaults</button>
+                    </div>
+                </div>
+            </section>
         </main>
     </div>
 
@@ -577,7 +633,7 @@
     <!-- Modal for Task -->
     <div id="task-modal" class="modal">
         <div class="modal-backdrop"></div>
-        <div class="modal-content">
+        <div class="modal-content" style="max-width: 400px;">
             <div class="modal-header">
                 <h3 id="task-modal-title">New Task</h3>
                 <button class="modal-close" data-close-modal>&times;</button>
@@ -585,45 +641,34 @@
             <div class="modal-body">
                 <div class="form-group">
                     <label for="task-title">Title</label>
-                    <input type="text" id="task-title" class="form-input" placeholder="Task title" required>
+                    <input type="text" id="task-title" class="form-input" placeholder="What needs to be done?" required>
                 </div>
                 <div class="form-group">
-                    <label for="task-description">Description</label>
-                    <textarea id="task-description" class="form-input" placeholder="Optional description"></textarea>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="task-priority">Priority</label>
-                        <select id="task-priority" class="form-input">
-                            <option value="low">Low</option>
-                            <option value="medium" selected>Medium</option>
-                            <option value="high">High</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="task-status">Status</label>
-                        <select id="task-status" class="form-input">
-                            <option value="todo">To Do</option>
-                            <option value="in-progress">In Progress</option>
-                            <option value="done">Done</option>
-                        </select>
-                    </div>
+                    <label for="task-category">Category</label>
+                    <input type="text" id="task-category" class="form-input" placeholder="e.g. Work, Study, Personal"
+                        list="category-suggestions">
+                    <datalist id="category-suggestions"></datalist>
                 </div>
                 <div class="form-group">
-                    <label for="task-stopwatch">Assign to Stopwatch</label>
-                    <select id="task-stopwatch" class="form-input">
-                        <option value="">None</option>
+                    <label for="task-priority">Priority</label>
+                    <select id="task-priority" class="form-input">
+                        <option value="low">Low</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="high">High</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label for="task-tags">Tags (comma separated)</label>
-                    <input type="text" id="task-tags" class="form-input" placeholder="work, urgent, project">
-                </div>
-                <div class="form-group">
-                    <label>Subtasks</label>
-                    <div id="subtasks-list" class="subtasks-list"></div>
-                    <button type="button" id="add-subtask-btn" class="btn btn-sm btn-ghost">+ Add Subtask</button>
-                </div>
+                <!-- Hidden fields to keep saveTask() working -->
+                <textarea id="task-description" style="display:none;"></textarea>
+                <select id="task-status" style="display:none;">
+                    <option value="todo" selected>To Do</option>
+                    <option value="in-progress">In Progress</option>
+                    <option value="done">Done</option>
+                </select>
+                <select id="task-stopwatch" style="display:none;">
+                    <option value="">None</option>
+                </select>
+                <input type="text" id="task-tags" style="display:none;">
+                <div id="subtasks-list" style="display:none;"></div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-ghost" data-close-modal>Cancel</button>
@@ -633,7 +678,40 @@
         </div>
     </div>
 
+    <!-- Quick Capture Overlay (Ctrl+N) -->
+    <div id="quick-capture-overlay" class="quick-capture-overlay">
+        <div class="quick-capture-box">
+            <div class="quick-capture-header">
+                <span class="quick-capture-label">Quick Capture</span>
+                <span class="quick-capture-hint">Ctrl+N</span>
+            </div>
+            <input type="text" id="quick-capture-input" class="form-input" placeholder="Capture an idea..."
+                autocomplete="off">
+            <div class="quick-capture-row">
+                <input type="text" id="quick-capture-category" class="form-input" placeholder="Category"
+                    list="qc-category-suggestions">
+                <datalist id="qc-category-suggestions"></datalist>
+                <select id="quick-capture-priority" class="form-select">
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                    <option value="high">High</option>
+                </select>
+                <button id="quick-capture-save" class="btn btn-sm btn-primary">Save</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Notification Toast -->
+    <!-- Floating Settings Button -->
+    <button class="settings-fab" id="settings-toggle" title="Settings">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path
+                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+            </path>
+        </svg>
+    </button>
+
     <div id="toast" class="toast">
         <span id="toast-message"></span>
     </div>
@@ -652,6 +730,7 @@
     <script src="js/stopwatch.js"></script>
     <script src="js/time-tracker.js"></script>
     <script src="js/advanced-stopwatches.js"></script>
+    <script src="js/shortcuts.js"></script>
     <script src="js/tasks.js"></script>
     <script src="js/dailys.js"></script>
     <script src="js/graphs.js"></script>
