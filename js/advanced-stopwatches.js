@@ -175,7 +175,7 @@ const AdvancedStopwatchesModule = {
         if (!wasteTime) {
             wasteTime = {
                 id: WASTE_TIME_ID,
-                name: '⏳ Waste Time',
+                name: 'Waste Time',
                 color: '#ef4444', // Red color
                 goalMs: 2 * 60 * 60 * 1000, // 2 hours goal (less is better)
                 goalDirection: 'minimize',

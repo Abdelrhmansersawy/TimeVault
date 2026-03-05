@@ -13,7 +13,8 @@ const StorageManager = {
         LAST_CLOSE: 'focusclock_last_close',
         ACCOUNT_CREATED: 'focusclock_account_created',
         DAILYS: 'focusclock_dailys',      // Daily journal entries
-        TASKS: 'focusclock_tasks'         // Task database
+        TASKS: 'focusclock_tasks',        // Task database
+        ACTIVE_TIMER: 'focusclock_active_timer'  // Active task/break timer state
     },
 
     /**
@@ -530,6 +531,69 @@ const StorageManager = {
             }
         }
         return null;
+    },
+
+    // ============================================
+    // Active Timer (for daily time log)
+    // ============================================
+
+    /**
+     * Get the active timer state (survives page refresh)
+     * @returns {{taskName: string, startTime: number, isBreak: boolean, dateStr: string}|null}
+     */
+    getActiveTimer() {
+        return this.get(this.KEYS.ACTIVE_TIMER, null);
+    },
+
+    /**
+     * Save active timer state
+     */
+    saveActiveTimer(timerState) {
+        return this.set(this.KEYS.ACTIVE_TIMER, timerState);
+    },
+
+    /**
+     * Clear the active timer
+     */
+    clearActiveTimer() {
+        return this.remove(this.KEYS.ACTIVE_TIMER);
+    },
+
+    /**
+     * Add a time log entry to a daily entry
+     * @param {string} dateStr - YYYY-MM-DD
+     * @param {object} logEntry - {id, taskName, startTime, endTime, isBreak}
+     */
+    addTimeLogEntry(dateStr, logEntry) {
+        const dailys = this.getDailys();
+        if (!dailys[dateStr]) {
+            dailys[dateStr] = {
+                routine: [],
+                plannedTaskIds: [],
+                completedTaskIds: [],
+                blocked: '',
+                tomorrow: '',
+                reflection: '',
+                timeLog: [],
+                date: dateStr,
+                createdAt: Date.now(),
+                updatedAt: Date.now()
+            };
+        }
+        if (!dailys[dateStr].timeLog) {
+            dailys[dateStr].timeLog = [];
+        }
+        dailys[dateStr].timeLog.push(logEntry);
+        dailys[dateStr].updatedAt = Date.now();
+        return this.set(this.KEYS.DAILYS, dailys);
+    },
+
+    /**
+     * Get time log entries for a specific date
+     */
+    getTimeLog(dateStr) {
+        const entry = this.getDailyEntry(dateStr);
+        return (entry && entry.timeLog) || [];
     }
 };
 

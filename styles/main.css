@@ -1,39 +1,40 @@
 /* ============================================
    TIME VAULT - Main Stylesheet
-   Modern dark theme with glassmorphism
+   Dark industrial theme inspired by SoB
    ============================================ */
 
 /* CSS Custom Properties */
 :root {
-    /* Colors */
-    --color-bg-primary: #0a0a0f;
-    --color-bg-secondary: #12121a;
-    --color-bg-tertiary: #1a1a25;
-    --color-bg-card: rgba(30, 30, 45, 0.6);
-    --color-bg-card-hover: rgba(40, 40, 60, 0.7);
+    /* Colors — Dark Industrial */
+    --color-bg-primary: #000000;
+    --color-bg-secondary: #121214;
+    --color-bg-tertiary: #1a1a1c;
+    --color-bg-card: #121214;
+    --color-bg-card-hover: #0e0e10;
 
     --color-text-primary: #ffffff;
-    --color-text-secondary: #a0a0b0;
-    --color-text-muted: #606070;
+    --color-text-secondary: #88888a;
+    --color-text-muted: #555557;
 
-    --color-accent: #6366f1;
-    --color-accent-light: #818cf8;
-    --color-accent-dark: #4f46e5;
+    --color-accent: #0066ff;
+    --color-accent-light: #3388ff;
+    --color-accent-dark: #0052cc;
 
-    --color-success: #22c55e;
-    --color-warning: #eab308;
-    --color-danger: #ef4444;
+    --color-success: #00c853;
+    --color-warning: #ff9100;
+    --color-danger: #ff3d00;
 
-    --color-border: rgba(255, 255, 255, 0.08);
-    --color-border-focus: rgba(99, 102, 241, 0.5);
+    --color-border: #1e1e22;
+    --color-border-focus: rgba(0, 102, 255, 0.5);
 
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-    --gradient-card: linear-gradient(135deg, rgba(30, 30, 45, 0.8) 0%, rgba(20, 20, 35, 0.6) 100%);
-    --gradient-glow: radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.15) 0%, transparent 50%);
+    /* Flat colors — no gradients */
+    --gradient-primary: #0066ff;
+    --gradient-card: #121214;
+    --gradient-glow: none;
 
     /* Typography */
     --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, Consolas, monospace;
     --font-size-xs: 0.75rem;
     --font-size-sm: 0.875rem;
     --font-size-base: 1rem;
@@ -59,20 +60,20 @@
     --spacing-2xl: 3rem;
     --spacing-3xl: 4rem;
 
-    /* Border Radius */
-    --radius-sm: 0.375rem;
-    --radius-md: 0.5rem;
-    --radius-lg: 0.75rem;
-    --radius-xl: 1rem;
-    --radius-2xl: 1.5rem;
+    /* Border Radius — tighter, industrial */
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 8px;
+    --radius-xl: 12px;
+    --radius-2xl: 12px;
     --radius-full: 9999px;
 
-    /* Shadows */
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3);
-    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.3);
-    --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.4);
-    --shadow-glow: 0 0 40px rgba(99, 102, 241, 0.3);
+    /* Shadows — minimal */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.4);
+    --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.5);
+    --shadow-glow: 0 0 20px rgba(0, 102, 255, 0.15);
 
     /* Transitions */
     --transition-fast: 150ms ease;
@@ -87,39 +88,35 @@
 
 /* Light Theme Variables */
 body.light-theme {
-    /* Colors - Light Mode */
     --color-bg-primary: #f5f5f7;
     --color-bg-secondary: #ffffff;
     --color-bg-tertiary: #e8e8ed;
-    --color-bg-card: rgba(255, 255, 255, 0.8);
-    --color-bg-card-hover: rgba(245, 245, 247, 0.9);
+    --color-bg-card: #ffffff;
+    --color-bg-card-hover: #f0f0f2;
 
     --color-text-primary: #1a1a2e;
     --color-text-secondary: #55556d;
     --color-text-muted: #8888a0;
 
-    --color-border: rgba(0, 0, 0, 0.08);
-    --color-border-focus: rgba(99, 102, 241, 0.5);
+    --color-border: rgba(0, 0, 0, 0.1);
+    --color-border-focus: rgba(0, 102, 255, 0.5);
 
-    /* Gradients - Light Mode */
-    --gradient-card: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 248, 252, 0.8) 100%);
-    --gradient-glow: radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.1) 0%, transparent 50%);
+    --gradient-card: #ffffff;
+    --gradient-glow: none;
 
-    /* Shadows - Light Mode */
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08);
     --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
     --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
     --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.15);
-    --shadow-glow: 0 0 40px rgba(99, 102, 241, 0.2);
+    --shadow-glow: 0 0 20px rgba(0, 102, 255, 0.1);
 
-    /* Direct style overrides for body */
     background: #f5f5f7 !important;
     color: #1a1a2e !important;
 }
 
-/* Light theme specific overrides */
+/* Light theme overrides */
 body.light-theme .main-nav {
-    background: rgba(255, 255, 255, 0.95) !important;
+    background: rgba(255, 255, 255, 0.97) !important;
     border-bottom-color: rgba(0, 0, 0, 0.1);
 }
 
@@ -132,17 +129,15 @@ body.light-theme .nav-tab:hover {
 }
 
 body.light-theme .brand-text {
-    background: var(--gradient-primary);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: var(--color-accent);
+    -webkit-text-fill-color: var(--color-accent);
 }
 
 body.light-theme .card,
 body.light-theme .graph-card,
 body.light-theme .stopwatch-card,
 body.light-theme .modal-content {
-    background: rgba(255, 255, 255, 0.9) !important;
+    background: #ffffff !important;
     border-color: rgba(0, 0, 0, 0.1);
 }
 
@@ -190,19 +185,6 @@ body {
     -moz-osx-font-smoothing: grayscale;
 }
 
-/* Background Effects */
-body::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: var(--gradient-glow);
-    pointer-events: none;
-    z-index: -1;
-}
-
 /* App Container */
 .app-container {
     display: flex;
@@ -218,9 +200,9 @@ body::before {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: var(--spacing-md) var(--spacing-xl);
-    background: rgba(10, 10, 15, 0.8);
-    backdrop-filter: blur(20px);
+    padding: 0 var(--spacing-xl);
+    height: 60px;
+    background: var(--color-bg-secondary);
     border-bottom: 1px solid var(--color-border);
 }
 
@@ -237,36 +219,35 @@ body::before {
 }
 
 .brand-text {
-    font-size: var(--font-size-lg);
-    font-weight: var(--font-weight-semibold);
-    background: var(--gradient-primary);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    font-size: 18px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.02em;
 }
 
 .nav-tabs {
     display: flex;
-    gap: var(--spacing-xs);
-    background: var(--color-bg-tertiary);
-    padding: var(--spacing-xs);
-    border-radius: var(--radius-xl);
+    gap: 4px;
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
 }
 
 .nav-tab {
     display: flex;
     align-items: center;
-    gap: var(--spacing-sm);
-    padding: var(--spacing-sm) var(--spacing-lg);
+    gap: 6px;
+    padding: 6px 14px;
     border: none;
     background: transparent;
     color: var(--color-text-secondary);
     font-family: inherit;
-    font-size: var(--font-size-sm);
-    font-weight: var(--font-weight-medium);
+    font-size: 12px;
+    font-weight: 600;
     cursor: pointer;
-    border-radius: var(--radius-lg);
-    transition: all var(--transition-base);
+    border-radius: var(--radius-md);
+    letter-spacing: 0.04em;
+    transition: background 0.15s, color 0.15s;
 }
 
 .nav-tab:hover {
@@ -275,14 +256,14 @@ body::before {
 }
 
 .nav-tab.active {
-    color: var(--color-text-primary);
-    background: var(--gradient-primary);
-    box-shadow: var(--shadow-md);
+    color: #fff;
+    background: var(--color-accent);
+    box-shadow: none;
 }
 
 .tab-icon {
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
     flex-shrink: 0;
 }
 
@@ -325,8 +306,9 @@ body::before {
 }
 
 .section-header h2 {
-    font-size: var(--font-size-2xl);
-    font-weight: var(--font-weight-semibold);
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
 }
 
 /* Clock Display */
@@ -345,6 +327,7 @@ body::before {
 .time-display {
     font-size: var(--font-size-5xl);
     font-weight: var(--font-weight-light);
+    font-family: var(--font-mono);
     letter-spacing: -0.02em;
     display: flex;
     align-items: baseline;
@@ -429,6 +412,7 @@ body::before {
 .timer-display {
     font-size: var(--font-size-5xl);
     font-weight: var(--font-weight-light);
+    font-family: var(--font-mono);
     letter-spacing: -0.02em;
     display: flex;
     align-items: baseline;
@@ -575,10 +559,11 @@ body::before {
     bottom: var(--spacing-xl);
     left: 50%;
     transform: translateX(-50%) translateY(100px);
-    background: var(--color-bg-tertiary);
+    background: var(--color-bg-card);
     color: var(--color-text-primary);
     padding: var(--spacing-md) var(--spacing-xl);
-    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
     box-shadow: var(--shadow-xl);
     z-index: var(--z-toast);
     opacity: 0;

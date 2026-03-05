@@ -27,42 +27,14 @@
                 <span class="brand-text">Time Vault</span>
             </div>
             <div class="nav-tabs">
-                <button class="nav-tab active" data-section="clock">
+                <button class="nav-tab active" data-section="timelog">
                     <svg class="tab-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="10"></circle>
                         <polyline points="12 6 12 12 16 14"></polyline>
+                        <line x1="20" y1="20" x2="22" y2="22"></line>
                     </svg>
-                    <span class="tab-text">Clock</span>
-                </button>
-                <button class="nav-tab" data-section="alarm">
-                    <svg class="tab-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                    </svg>
-                    <span class="tab-text">Alarm</span>
-                </button>
-                <button class="nav-tab" data-section="timer">
-                    <svg class="tab-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="13" r="8"></circle>
-                        <path d="M12 9v4l2 2"></path>
-                        <path d="M5 3L2 6"></path>
-                        <path d="M22 6l-3-3"></path>
-                        <path d="M6 19l-2 2"></path>
-                        <path d="M18 19l2 2"></path>
-                        <path d="M12 3v2"></path>
-                    </svg>
-                    <span class="tab-text">Timer</span>
-                </button>
-                <button class="nav-tab" data-section="stopwatch">
-                    <svg class="tab-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <polyline points="12 6 12 12 16 14"></polyline>
-                    </svg>
-                    <span class="tab-text">Stopwatch</span>
+                    <span class="tab-text">Log</span>
                 </button>
                 <button class="nav-tab" data-section="stopwatches">
                     <svg class="tab-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -70,7 +42,7 @@
                         <circle cx="12" cy="12" r="10"></circle>
                         <circle cx="12" cy="12" r="3"></circle>
                     </svg>
-                    <span class="tab-text">Stopwatches</span>
+                    <span class="tab-text">Focus</span>
                 </button>
                 <button class="nav-tab" data-section="tasks">
                     <svg class="tab-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -86,7 +58,7 @@
                         <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
                         <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
                     </svg>
-                    <span class="tab-text">Dailys</span>
+                    <span class="tab-text">Daily</span>
                 </button>
                 <button class="nav-tab" data-section="graphs">
                     <svg class="tab-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -121,7 +93,7 @@
         <!-- Main Content -->
         <main class="main-content">
             <!-- Clock Section -->
-            <section id="clock-section" class="section active">
+            <section id="clock-section" class="section">
                 <div class="clock-container">
                     <div class="clock-display">
                         <div class="time-display">
@@ -284,6 +256,61 @@
                 </div>
             </section>
 
+            <!-- Time Log Section (standalone, distraction-free) -->
+            <section id="timelog-section" class="section active">
+                <div class="timelog-page">
+                    <div class="timelog-header">
+                        <h2>Time Log</h2>
+                        <div class="dailys-nav">
+                            <button id="timelog-prev" class="btn btn-icon btn-ghost" title="Previous day">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <polyline points="15 18 9 12 15 6"></polyline>
+                                </svg>
+                            </button>
+                            <span id="timelog-date-display" class="dailys-date">Today</span>
+                            <button id="timelog-next" class="btn btn-icon btn-ghost" title="Next day">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <polyline points="9 18 15 12 9 6"></polyline>
+                                </svg>
+                            </button>
+                            <button id="timelog-today" class="btn btn-sm btn-secondary"
+                                style="margin-left: 12px;">Today</button>
+                        </div>
+                    </div>
+
+                    <!-- Active Timer -->
+                    <div id="time-log-active" class="time-log-active" style="display: none;">
+                        <div class="time-log-active-info">
+                            <span id="time-log-active-label" class="time-log-active-label"></span>
+                            <span id="time-log-active-elapsed" class="time-log-active-elapsed">00:00:00</span>
+                        </div>
+                        <div class="time-log-active-since">
+                            Started at <span id="time-log-active-start"></span>
+                        </div>
+                        <div class="time-log-controls">
+                            <button id="time-log-stop-btn" class="btn btn-sm btn-danger">Stop</button>
+                        </div>
+                    </div>
+
+                    <!-- Start Controls -->
+                    <div id="time-log-start-controls" class="time-log-controls">
+                        <div class="time-log-input-row">
+                            <input type="text" id="time-log-task-input" class="form-input time-log-input"
+                                placeholder="What are you working on?">
+                            <button id="time-log-start-btn" class="btn btn-sm btn-primary">Start Task</button>
+                            <button id="time-log-break-btn" class="btn btn-sm btn-secondary">Break</button>
+                        </div>
+                    </div>
+
+                    <!-- Log Entries -->
+                    <div id="time-log-entries" class="time-log-entries">
+                        <!-- Auto-generated log entries rendered here -->
+                    </div>
+                </div>
+            </section>
+
             <!-- Dailys Section -->
             <section id="dailys-section" class="section">
                 <div class="section-header">
@@ -308,10 +335,11 @@
                 </div>
 
                 <div class="dailys-container">
+
                     <!-- Routine Checklist -->
                     <div class="daily-section">
                         <div class="daily-section-header">
-                            <h3>☀️ Morning Routine</h3>
+                            <h3>Morning Routine</h3>
                             <button id="add-routine-btn" class="btn btn-sm btn-ghost">+ Add</button>
                         </div>
                         <div id="routine-list" class="routine-list">
@@ -322,7 +350,7 @@
                     <!-- Plan - Tasks from Database -->
                     <div class="daily-section">
                         <div class="daily-section-header">
-                            <h3>📋 Plan for Today</h3>
+                            <h3>Plan for Today</h3>
                             <button id="add-plan-btn" class="btn btn-sm btn-ghost">+ Add Tasks</button>
                         </div>
                         <div id="plan-list" class="checklist-list">
@@ -333,7 +361,7 @@
                     <!-- Done - Completed Tasks -->
                     <div class="daily-section">
                         <div class="daily-section-header">
-                            <h3>✅ What I Did</h3>
+                            <h3>What I Did</h3>
                         </div>
                         <div id="done-list" class="checklist-list">
                             <!-- Completed tasks rendered here -->
@@ -342,21 +370,21 @@
 
                     <!-- Blocked -->
                     <div class="daily-section">
-                        <h3>🚧 Blocked / Issues</h3>
+                        <h3>Blocked / Issues</h3>
                         <textarea id="daily-blocked" class="daily-textarea"
                             placeholder="What's blocking your progress?"></textarea>
                     </div>
 
                     <!-- Tomorrow -->
                     <div class="daily-section">
-                        <h3>📅 For Tomorrow</h3>
+                        <h3>For Tomorrow</h3>
                         <textarea id="daily-tomorrow" class="daily-textarea"
                             placeholder="What needs to happen tomorrow?"></textarea>
                     </div>
 
                     <!-- Reflection -->
                     <div class="daily-section">
-                        <h3>💭 Reflection</h3>
+                        <h3>Reflection</h3>
                         <textarea id="daily-reflection" class="daily-textarea"
                             placeholder="How did today go? Any learnings?"></textarea>
                     </div>

@@ -3,7 +3,7 @@
  */
 
 const App = {
-    currentSection: 'clock',
+    currentSection: 'timelog',
 
     init() {
         console.log('Time Vault initializing...');
