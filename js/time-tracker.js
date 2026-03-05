@@ -54,14 +54,15 @@ const TimeTracker = {
         const daysDiff = this.getDaysBetween(startDate, currentDate);
 
         if (daysDiff === 0) {
-            // Same day - just update accumulated time
+            // Same day - add the elapsed time from the current run to accumulated
             const elapsedSinceStart = now - sw.startTimestamp;
-            sw.accumulatedMs = elapsedSinceStart;
+            sw.accumulatedMs = (sw.accumulatedMs || 0) + elapsedSinceStart;
         } else {
             // Multiple days - need to split and save history
             this.processCrossDayStopwatch(sw, now);
         }
 
+        // Reset startTimestamp to now so the stopwatch continues running from this point
         StorageManager.updateStopwatch(sw.id, {
             accumulatedMs: sw.accumulatedMs,
             startTimestamp: sw.isRunning ? now : null

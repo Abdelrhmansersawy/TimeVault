@@ -107,53 +107,14 @@ const TasksModule = {
             high: '#ef4444'
         };
         const priorityLabels = { low: 'Low', medium: 'Med', high: 'High' };
-        const statusLabels = { 'todo': 'To Do', 'in-progress': 'In Progress', 'done': 'Done' };
-
-        const completedSubtasks = task.subtasks.filter(s => s.completed).length;
-        const totalSubtasks = task.subtasks.length;
-
-        // Get assigned stopwatch name
-        let stopwatchName = '';
-        if (task.assignedStopwatch) {
-            const stopwatches = StorageManager.getStopwatches();
-            const sw = stopwatches.find(s => s.id === task.assignedStopwatch);
-            if (sw) stopwatchName = sw.name;
-        }
 
         return `
             <div class="task-card ${task.status}" data-task-id="${task.id}">
                 <div class="task-header">
                     <span class="task-priority" style="background: ${priorityColors[task.priority]}">${priorityLabels[task.priority]}</span>
-                    <span class="task-status">${statusLabels[task.status]}</span>
+                    ${task.category ? `<span class="task-category-badge">${this.escapeHtml(task.category)}</span>` : ''}
                 </div>
                 <h4 class="task-title">${this.escapeHtml(task.title)}</h4>
-                ${task.description ? `<p class="task-description">${this.escapeHtml(task.description)}</p>` : ''}
-                
-                ${totalSubtasks > 0 ? `
-                    <div class="task-subtasks-progress">
-                        <div class="subtasks-bar">
-                            <div class="subtasks-fill" style="width: ${(completedSubtasks / totalSubtasks) * 100}%"></div>
-                        </div>
-                        <span class="subtasks-count">${completedSubtasks}/${totalSubtasks} subtasks</span>
-                    </div>
-                ` : ''}
-                
-                ${task.tags.length > 0 ? `
-                    <div class="task-tags">
-                        ${task.tags.map(tag => `<span class="task-tag">${this.escapeHtml(tag)}</span>`).join('')}
-                    </div>
-                ` : ''}
-                
-                ${stopwatchName ? `
-                    <div class="task-stopwatch">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <polyline points="12 6 12 12 16 14"></polyline>
-                        </svg>
-                        ${this.escapeHtml(stopwatchName)}
-                    </div>
-                ` : ''}
-                
                 <div class="task-actions">
                     ${task.status !== 'in-progress' ? `
                         <button class="btn btn-sm btn-primary" data-start-task="${task.id}">
@@ -203,6 +164,7 @@ const TasksModule = {
         this.editingTaskId = taskId;
 
         const titleInput = document.getElementById('task-title');
+        const categoryInput = document.getElementById('task-category');
         const descInput = document.getElementById('task-description');
         const prioritySelect = document.getElementById('task-priority');
         const statusSelect = document.getElementById('task-status');
@@ -212,6 +174,9 @@ const TasksModule = {
         const modalTitle = document.getElementById('task-modal-title');
         const saveBtn = document.getElementById('save-task-btn');
         const deleteBtn = document.getElementById('delete-task-btn');
+
+        // Populate category suggestions from existing tasks
+        this.populateCategorySuggestions();
 
         // Populate stopwatch dropdown
         if (stopwatchSelect) {
@@ -229,6 +194,7 @@ const TasksModule = {
             if (task) {
                 modalTitle.textContent = 'Edit Task';
                 titleInput.value = task.title;
+                if (categoryInput) categoryInput.value = task.category || '';
                 descInput.value = task.description || '';
                 prioritySelect.value = task.priority;
                 statusSelect.value = task.status;
@@ -244,6 +210,7 @@ const TasksModule = {
         } else {
             modalTitle.textContent = 'New Task';
             titleInput.value = '';
+            if (categoryInput) categoryInput.value = '';
             descInput.value = '';
             prioritySelect.value = 'medium';
             statusSelect.value = 'todo';
@@ -306,6 +273,7 @@ const TasksModule = {
 
     saveTask() {
         const titleInput = document.getElementById('task-title');
+        const categoryInput = document.getElementById('task-category');
         const descInput = document.getElementById('task-description');
         const prioritySelect = document.getElementById('task-priority');
         const statusSelect = document.getElementById('task-status');
@@ -340,6 +308,7 @@ const TasksModule = {
 
         const taskData = {
             title,
+            category: categoryInput ? categoryInput.value.trim() : '',
             description: descInput.value.trim(),
             priority: prioritySelect.value,
             status: statusSelect.value,
@@ -358,6 +327,23 @@ const TasksModule = {
 
         this.closeModal();
         this.render();
+    },
+
+    /**
+     * Populate category suggestions datalist from existing tasks
+     */
+    populateCategorySuggestions(targetId = 'category-suggestions') {
+        const datalist = document.getElementById(targetId);
+        if (!datalist) return;
+
+        const tasks = StorageManager.getTasks();
+        const categories = [...new Set(
+            tasks.map(t => t.category).filter(c => c && c.trim())
+        )];
+
+        datalist.innerHTML = categories.map(c =>
+            `<option value="${this.escapeHtml(c)}"></option>`
+        ).join('');
     },
 
     deleteTask() {
