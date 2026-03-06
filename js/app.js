@@ -4,17 +4,13 @@
 
 const App = {
     currentSection: 'timelog',
+    previousSection: 'timelog',
 
     init() {
         console.log('Time Vault initializing...');
 
         // Initialize account creation date (for graph boundaries)
         StorageManager.initAccountCreatedAt();
-
-        // Request notification permission
-        if ('Notification' in window && Notification.permission === 'default') {
-            Notification.requestPermission();
-        }
 
         // Process any missed time since last close
         TimeTracker.processOnAppLoad();
@@ -27,10 +23,22 @@ const App = {
         AdvancedStopwatchesModule.init();
         TasksModule.init();
         DailysModule.init();
+        HabitsModule.init();
         GraphsModule.init();
 
         // Set up navigation
         this.setupNavigation();
+
+        // Floating settings button
+        document.getElementById('settings-toggle')?.addEventListener('click', () => {
+            this.previousSection = this.currentSection;
+            this.navigateTo('settings');
+        });
+
+        // Settings close button — go back to previous section
+        document.getElementById('settings-close-btn')?.addEventListener('click', () => {
+            this.navigateTo(this.previousSection || 'timelog');
+        });
 
         // Schedule midnight check
         TimeTracker.scheduleMidnightCheck();
@@ -45,8 +53,11 @@ const App = {
             StorageManager.saveLastCloseTime();
         }, 60000); // Every minute
 
-        // Set up theme toggle
-        this.setupThemeToggle();
+        // Theme system
+        ThemeManager.init();
+        document.getElementById('theme-toggle')?.addEventListener('click', () => {
+            ThemeManager.toggle();
+        });
 
         // Set up quick capture
         this.setupQuickCapture();
@@ -55,50 +66,24 @@ const App = {
         ShortcutsModule.init();
         ShortcutsModule.renderPanel();
 
-        // Floating settings button
-        document.getElementById('settings-toggle')?.addEventListener('click', () => {
-            this.navigateTo('settings');
-        });
-
-        // Theme toggle in settings
-        document.getElementById('theme-toggle-setting')?.addEventListener('click', () => {
-            const isLight = document.body.classList.toggle('light-theme');
-            localStorage.setItem('theme', isLight ? 'light' : 'dark');
-            this.updateThemeIcon(isLight);
-        });
-
         // Shortcuts reset button
         document.getElementById('shortcuts-reset-btn')?.addEventListener('click', () => {
             ShortcutsModule.resetToDefaults();
         });
 
+        // Panel width slider
+        this.setupPanelWidth();
+
+        // Max session duration warning
+        this.setupMaxSession();
+
+        // Notification permission (once per session)
+        this.setupNotificationPrompt();
+
+        // Obsidian vault sync
+        if (typeof VaultSync !== 'undefined') VaultSync.init();
+
         console.log('Time Vault initialized successfully!');
-    },
-
-    setupThemeToggle() {
-        const toggle = document.getElementById('theme-toggle');
-        const savedTheme = localStorage.getItem('theme') || 'dark';
-
-        // Apply saved theme on load
-        if (savedTheme === 'light') {
-            document.body.classList.add('light-theme');
-            this.updateThemeIcon(true);
-        }
-
-        toggle?.addEventListener('click', () => {
-            const isLight = document.body.classList.toggle('light-theme');
-            localStorage.setItem('theme', isLight ? 'light' : 'dark');
-            this.updateThemeIcon(isLight);
-        });
-    },
-
-    updateThemeIcon(isLight) {
-        const darkIcon = document.querySelector('.theme-icon-dark');
-        const lightIcon = document.querySelector('.theme-icon-light');
-        if (darkIcon && lightIcon) {
-            darkIcon.style.display = isLight ? 'none' : 'block';
-            lightIcon.style.display = isLight ? 'block' : 'none';
-        }
     },
 
     setupNavigation() {
@@ -125,9 +110,11 @@ const App = {
             sec.classList.toggle('active', sec.id === `${section}-section`);
         });
 
-        // Refresh graphs when navigating to that section
+        // Refresh sections when navigated to
         if (section === 'graphs') {
             GraphsModule.render();
+        } else if (section === 'habits') {
+            HabitsModule.render();
         }
     },
 
@@ -177,15 +164,15 @@ const App = {
         } else {
             overlay.classList.add('open');
 
-            // Populate category suggestions
             if (typeof TasksModule !== 'undefined') {
-                TasksModule.populateCategorySuggestions('qc-category-suggestions');
+                TasksModule.populateStopwatchSelect('quick-capture-stopwatch');
             }
 
             const input = document.getElementById('quick-capture-input');
             input.value = '';
-            document.getElementById('quick-capture-category').value = '';
             document.getElementById('quick-capture-priority').value = 'medium';
+            const swSelect = document.getElementById('quick-capture-stopwatch');
+            if (swSelect) swSelect.value = '';
             setTimeout(() => input?.focus(), 50);
         }
     },
@@ -195,10 +182,146 @@ const App = {
         if (overlay) overlay.classList.remove('open');
     },
 
+    setupPanelWidth() {
+        const slider = document.getElementById('panel-width-slider');
+        const label = document.getElementById('panel-width-value');
+        const saved = localStorage.getItem('panelWidth');
+
+        if (saved) {
+            const val = parseInt(saved, 10);
+            this.applyPanelWidth(val);
+            if (slider) slider.value = val;
+            if (label) label.textContent = `${val}px`;
+        }
+
+        slider?.addEventListener('input', () => {
+            const val = parseInt(slider.value, 10);
+            this.applyPanelWidth(val);
+            if (label) label.textContent = `${val}px`;
+            localStorage.setItem('panelWidth', val);
+        });
+    },
+
+    applyPanelWidth(px) {
+        document.documentElement.style.setProperty('--layout-max-width', `${px}px`);
+    },
+
+    setupMaxSession() {
+        const slider = document.getElementById('max-session-slider');
+        const label = document.getElementById('max-session-value');
+        const soundToggle = document.getElementById('session-warning-sound');
+
+        const savedMin = localStorage.getItem('maxSessionMinutes');
+        const savedSound = localStorage.getItem('sessionWarningSound');
+
+        const defaultMin = 90;
+        const minutes = savedMin ? parseInt(savedMin, 10) : defaultMin;
+
+        this.maxSessionMs = minutes * 60 * 1000;
+        this.sessionWarningSound = savedSound !== 'false';
+        this.sessionWarningFired = {};
+
+        if (slider) slider.value = minutes;
+        if (label) label.textContent = this.formatMinutesLabel(minutes);
+        if (soundToggle) soundToggle.checked = this.sessionWarningSound;
+
+        slider?.addEventListener('input', () => {
+            const val = parseInt(slider.value, 10);
+            this.maxSessionMs = val * 60 * 1000;
+            this.sessionWarningFired = {};
+            if (label) label.textContent = this.formatMinutesLabel(val);
+            localStorage.setItem('maxSessionMinutes', val);
+        });
+
+        soundToggle?.addEventListener('change', () => {
+            this.sessionWarningSound = soundToggle.checked;
+            localStorage.setItem('sessionWarningSound', soundToggle.checked);
+        });
+    },
+
+    formatMinutesLabel(min) {
+        const h = Math.floor(min / 60);
+        const m = min % 60;
+        if (h === 0) return `${m}m`;
+        if (m === 0) return `${h}h`;
+        return `${h}h ${m}m`;
+    },
+
+    fireSessionWarning(label) {
+        const key = label || '_default';
+        if (this.sessionWarningFired[key]) return;
+        this.sessionWarningFired[key] = true;
+
+        const limitLabel = this.formatMinutesLabel(this.maxSessionMs / 60000);
+        this.showToast(`"${label}" exceeded ${limitLabel} — take a break!`, 6000);
+
+        if (this.sessionWarningSound) {
+            this.playWarningBeep();
+        }
+
+        if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('Session Limit Reached', {
+                body: `"${label}" has been running for over ${limitLabel}. Consider taking a break.`,
+                icon: 'assets/favicon.png'
+            });
+        }
+    },
+
+    playWarningBeep() {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.frequency.value = 880;
+            osc.type = 'sine';
+            gain.gain.value = 0.15;
+            osc.start();
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+            osc.stop(ctx.currentTime + 0.4);
+            setTimeout(() => {
+                const osc2 = ctx.createOscillator();
+                const gain2 = ctx.createGain();
+                osc2.connect(gain2);
+                gain2.connect(ctx.destination);
+                osc2.frequency.value = 660;
+                osc2.type = 'sine';
+                gain2.gain.value = 0.15;
+                osc2.start();
+                gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+                osc2.stop(ctx.currentTime + 0.5);
+            }, 250);
+        } catch (e) { /* audio not available */ }
+    },
+
+    setupNotificationPrompt() {
+        if (!('Notification' in window)) return;
+        if (Notification.permission !== 'default') return;
+        if (sessionStorage.getItem('notif_prompt_dismissed')) return;
+
+        const prompt = document.getElementById('notification-prompt');
+        if (!prompt) return;
+        prompt.style.display = 'flex';
+
+        document.getElementById('notification-enable')?.addEventListener('click', () => {
+            Notification.requestPermission().then(perm => {
+                prompt.style.display = 'none';
+                sessionStorage.setItem('notif_prompt_dismissed', '1');
+                if (perm === 'granted') this.showToast('Notifications enabled');
+            });
+        });
+
+        document.getElementById('notification-dismiss')?.addEventListener('click', () => {
+            prompt.style.display = 'none';
+            sessionStorage.setItem('notif_prompt_dismissed', '1');
+        });
+    },
+
     saveQuickCapture() {
         const input = document.getElementById('quick-capture-input');
-        const categoryInput = document.getElementById('quick-capture-category');
         const prioritySelect = document.getElementById('quick-capture-priority');
+        const swSelect = document.getElementById('quick-capture-stopwatch');
 
         const title = input?.value.trim();
         if (!title) {
@@ -206,18 +329,23 @@ const App = {
             return;
         }
 
+        if (!swSelect?.value) {
+            this.showToast('Please assign a focus stopwatch');
+            swSelect?.focus();
+            return;
+        }
+
         StorageManager.addTask({
             title,
-            category: categoryInput?.value.trim() || '',
+            category: '',
             description: '',
             priority: prioritySelect?.value || 'medium',
             status: 'todo',
             tags: [],
             subtasks: [],
-            assignedStopwatch: null
+            assignedStopwatch: swSelect.value
         });
 
-        // Refresh Tasks tab
         if (typeof TasksModule !== 'undefined') {
             TasksModule.tasks = StorageManager.getTasks();
             TasksModule.render();

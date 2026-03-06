@@ -14,7 +14,9 @@ const StorageManager = {
         ACCOUNT_CREATED: 'focusclock_account_created',
         DAILYS: 'focusclock_dailys',      // Daily journal entries
         TASKS: 'focusclock_tasks',        // Task database
-        ACTIVE_TIMER: 'focusclock_active_timer'  // Active task/break timer state
+        ACTIVE_TIMER: 'focusclock_active_timer',  // Active task/break timer state
+        TAGS: 'focusclock_tags',                   // Persistent tag library
+        HABITS: 'focusclock_habits'                // Habit tracking data
     },
 
     /**
@@ -595,6 +597,83 @@ const StorageManager = {
     getTimeLog(dateStr) {
         const entry = this.getDailyEntry(dateStr);
         return (entry && entry.timeLog) || [];
+    },
+
+    // ============================================
+    // Persistent Tags
+    // ============================================
+
+    getTags() {
+        return this.get(this.KEYS.TAGS, []);
+    },
+
+    saveTags(tags) {
+        return this.set(this.KEYS.TAGS, tags);
+    },
+
+    addTag(tag) {
+        const tags = this.getTags();
+        const normalized = tag.trim();
+        if (normalized && !tags.includes(normalized)) {
+            tags.push(normalized);
+            this.saveTags(tags);
+        }
+        return tags;
+    },
+
+    removeTag(tag) {
+        const tags = this.getTags().filter(t => t !== tag);
+        return this.saveTags(tags);
+    },
+
+    // ============================================
+    // Habit Tracking
+    // ============================================
+
+    getHabits() {
+        return this.get(this.KEYS.HABITS, []);
+    },
+
+    saveHabits(habits) {
+        return this.set(this.KEYS.HABITS, habits);
+    },
+
+    addHabit(habit) {
+        const habits = this.getHabits();
+        habits.push(habit);
+        this.saveHabits(habits);
+        return habits;
+    },
+
+    updateHabit(id, updates) {
+        const habits = this.getHabits();
+        const idx = habits.findIndex(h => h.id === id);
+        if (idx !== -1) {
+            Object.assign(habits[idx], updates);
+            this.saveHabits(habits);
+        }
+        return habits;
+    },
+
+    deleteHabit(id) {
+        const habits = this.getHabits().filter(h => h.id !== id);
+        this.saveHabits(habits);
+        return habits;
+    },
+
+    toggleHabitCompletion(habitId, dateStr) {
+        const habits = this.getHabits();
+        const habit = habits.find(h => h.id === habitId);
+        if (!habit) return habits;
+        if (!habit.completions) habit.completions = [];
+        const idx = habit.completions.indexOf(dateStr);
+        if (idx !== -1) {
+            habit.completions.splice(idx, 1);
+        } else {
+            habit.completions.push(dateStr);
+        }
+        this.saveHabits(habits);
+        return habits;
     }
 };
 

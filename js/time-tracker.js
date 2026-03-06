@@ -161,37 +161,38 @@ const TimeTracker = {
         const todayDate = getDateString();
 
         stopwatches.forEach(sw => {
-            if (sw.lastResetDate && sw.lastResetDate === todayDate) {
-                // Already reset today
+            if (sw.lastResetDate === todayDate) {
                 return;
             }
 
-            if (sw.lastResetDate && sw.lastResetDate !== todayDate) {
-                // Need to reset - save previous day's data first
-                if (sw.accumulatedMs > 0 || sw.isRunning) {
-                    let totalMs = sw.accumulatedMs || 0;
+            // lastResetDate is missing or from a previous day -- needs reset
+            if (sw.accumulatedMs > 0 || sw.isRunning) {
+                let totalMs = sw.accumulatedMs || 0;
 
-                    if (sw.isRunning && sw.startTimestamp) {
-                        // Calculate time up to midnight of today
-                        const today = new Date();
-                        today.setHours(0, 0, 0, 0);
-                        totalMs += today.getTime() - sw.startTimestamp;
-                    }
+                if (sw.isRunning && sw.startTimestamp) {
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const msUpToMidnight = today.getTime() - sw.startTimestamp;
+                    if (msUpToMidnight > 0) totalMs += msUpToMidnight;
+                }
 
+                totalMs = Math.min(totalMs, 24 * 60 * 60 * 1000);
+
+                const saveDate = sw.lastResetDate || todayDate;
+                if (saveDate !== todayDate) {
                     StorageManager.addHistoryRecord({
                         stopwatchId: sw.id,
-                        date: sw.lastResetDate,
+                        date: saveDate,
                         totalMs: totalMs
                     });
                 }
-
-                // Reset for today
-                StorageManager.updateStopwatch(sw.id, {
-                    accumulatedMs: 0,
-                    lastResetDate: todayDate,
-                    startTimestamp: sw.isRunning ? Date.now() : null
-                });
             }
+
+            StorageManager.updateStopwatch(sw.id, {
+                accumulatedMs: 0,
+                lastResetDate: todayDate,
+                startTimestamp: sw.isRunning ? Date.now() : null
+            });
         });
     },
 

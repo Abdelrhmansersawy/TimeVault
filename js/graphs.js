@@ -980,25 +980,112 @@ const GraphsModule = {
      */
     renderWasteTimeAnalysis() {
         const WASTE_TIME_ID = 'waste-time-builtin';
+        const dangerColor = getComputedStyle(document.body).getPropertyValue('--color-danger').trim() || '#e05561';
         const sessions = StorageManager.getSessionsForStopwatch(WASTE_TIME_ID, 30);
 
-        if (sessions.length === 0) {
-            return `
-                <div class="session-analysis-empty">
-                    <p>No waste time sessions recorded yet. Sessions will appear here as you use the app.</p>
-                </div>
-            `;
+        let wasteHtml = '';
+        if (sessions.length > 0) {
+            wasteHtml = `
+                <div class="waste-time-analysis">
+                    <h3 class="analysis-section-title">Waste Time Analysis</h3>
+                    <div class="analysis-grid">
+                        ${this.renderHourlyHeatmap(WASTE_TIME_ID, 'Waste Time', dangerColor, 30)}
+                        ${this.renderWeeklyPattern(WASTE_TIME_ID, 'Waste Time', dangerColor, 30)}
+                    </div>
+                </div>`;
         }
 
-        return `
-            <div class="waste-time-analysis">
-                <h3 class="analysis-section-title">📊 Waste Time Analysis</h3>
-                <div class="analysis-grid">
-                    ${this.renderHourlyHeatmap(WASTE_TIME_ID, 'Waste Time', '#ef4444', 30)}
-                    ${this.renderWeeklyPattern(WASTE_TIME_ID, 'Waste Time', '#ef4444', 30)}
+        return wasteHtml + this.renderProductivityTimeline();
+    },
+
+    /**
+     * Render daily productivity timeline: work vs waste by hour for today
+     */
+    renderProductivityTimeline() {
+        const today = getDateString(new Date());
+        const entries = StorageManager.getTimeLog(today);
+
+        const hourWork = new Array(24).fill(0);
+        const hourBreak = new Array(24).fill(0);
+
+        entries.forEach(e => {
+            const start = new Date(e.startTime);
+            const end = new Date(e.endTime);
+            let cursor = new Date(start);
+
+            while (cursor < end) {
+                const h = cursor.getHours();
+                const hourEnd = new Date(cursor);
+                hourEnd.setMinutes(59, 59, 999);
+                const sliceEnd = end < hourEnd ? end : hourEnd;
+                const ms = sliceEnd.getTime() - cursor.getTime();
+                if (e.isBreak) {
+                    hourBreak[h] += ms;
+                } else {
+                    hourWork[h] += ms;
+                }
+                cursor = new Date(hourEnd.getTime() + 1);
+            }
+        });
+
+        const maxMs = Math.max(...hourWork.map((w, i) => w + hourBreak[i]), 1);
+        const totalWork = hourWork.reduce((a, b) => a + b, 0);
+        const totalBreak = hourBreak.reduce((a, b) => a + b, 0);
+        const totalAll = totalWork + totalBreak || 1;
+        const productivePercent = Math.round((totalWork / totalAll) * 100);
+
+        const successColor = getComputedStyle(document.body).getPropertyValue('--color-success').trim() || '#4dba87';
+        const dangerColor = getComputedStyle(document.body).getPropertyValue('--color-danger').trim() || '#e05561';
+
+        const peakHour = hourWork.indexOf(Math.max(...hourWork));
+        const peakLabel = peakHour >= 12 ? `${peakHour === 12 ? 12 : peakHour - 12}PM` : `${peakHour === 0 ? 12 : peakHour}AM`;
+
+        const bars = Array.from({ length: 24 }, (_, h) => {
+            const wPct = (hourWork[h] / maxMs) * 100;
+            const bPct = (hourBreak[h] / maxMs) * 100;
+            const label = h % 6 === 0 ? (h >= 12 ? `${h === 12 ? 12 : h - 12}p` : `${h === 0 ? 12 : h}a`) : '';
+            return `<div class="prod-bar-col">
+                <div class="prod-bar-stack" style="height:60px">
+                    <div class="prod-bar-seg" style="height:${wPct}%;background:${successColor}"></div>
+                    <div class="prod-bar-seg" style="height:${bPct}%;background:${dangerColor};opacity:0.5"></div>
                 </div>
-            </div>
-        `;
+                <span class="prod-bar-label">${label}</span>
+            </div>`;
+        }).join('');
+
+        const fmtMs = (ms) => {
+            const m = Math.floor(ms / 60000);
+            const h = Math.floor(m / 60);
+            return h > 0 ? `${h}h ${m % 60}m` : `${m}m`;
+        };
+
+        return `
+            <div class="productivity-timeline graph-card">
+                <h3 class="analysis-section-title">Today's Productivity</h3>
+                <div class="prod-stats">
+                    <div class="prod-stat">
+                        <span class="prod-stat-val" style="color:${successColor}">${productivePercent}%</span>
+                        <span class="prod-stat-lbl">Productive</span>
+                    </div>
+                    <div class="prod-stat">
+                        <span class="prod-stat-val">${fmtMs(totalWork)}</span>
+                        <span class="prod-stat-lbl">Work</span>
+                    </div>
+                    <div class="prod-stat">
+                        <span class="prod-stat-val" style="color:${dangerColor}">${fmtMs(totalBreak)}</span>
+                        <span class="prod-stat-lbl">Break</span>
+                    </div>
+                    <div class="prod-stat">
+                        <span class="prod-stat-val">${peakLabel}</span>
+                        <span class="prod-stat-lbl">Peak Hour</span>
+                    </div>
+                </div>
+                <div class="prod-bar-chart">${bars}</div>
+                <div class="prod-legend">
+                    <span><span class="prod-legend-dot" style="background:${successColor}"></span>Work</span>
+                    <span><span class="prod-legend-dot" style="background:${dangerColor};opacity:0.5"></span>Break</span>
+                </div>
+            </div>`;
     },
 
     refresh() {

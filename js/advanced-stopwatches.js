@@ -177,15 +177,16 @@ const AdvancedStopwatchesModule = {
             wasteTime = {
                 id: WASTE_TIME_ID,
                 name: 'Waste Time',
-                color: '#ef4444', // Red color
-                goalMs: 2 * 60 * 60 * 1000, // 2 hours goal (less is better)
+                color: getComputedStyle(document.body).getPropertyValue('--color-danger').trim() || '#e05561',
+                goalMs: 2 * 60 * 60 * 1000,
                 goalDirection: 'minimize',
                 displayMode: 'circular',
                 isRunning: false,
                 startTimestamp: null,
                 accumulatedMs: 0,
+                lastResetDate: getDateString(),
                 createdAt: Date.now(),
-                isBuiltIn: true // Flag to prevent deletion
+                isBuiltIn: true
             };
             this.stopwatches.push(wasteTime);
             StorageManager.addStopwatch(wasteTime);
@@ -193,24 +194,26 @@ const AdvancedStopwatchesModule = {
         }
     },
 
-    // Check if waste time should auto-start or auto-stop
     checkWasteTimeAutoStart() {
         const wasteTime = this.stopwatches.find(sw => sw.id === WASTE_TIME_ID);
         if (!wasteTime || wasteTime.deleted) return;
 
-        // Check if any OTHER stopwatch (non-waste-time) is running
-        const otherRunning = this.stopwatches.some(sw =>
+        const otherStopwatchRunning = this.stopwatches.some(sw =>
             sw.id !== WASTE_TIME_ID &&
             sw.isRunning &&
             !sw.deleted
         );
 
-        if (otherRunning && wasteTime.isRunning) {
-            // Another stopwatch started - stop waste time
-            this.stopStopwatch(WASTE_TIME_ID, true); // Silent stop
-        } else if (!otherRunning && !wasteTime.isRunning) {
-            // No other stopwatch running - start waste time
-            this.startStopwatch(WASTE_TIME_ID, true); // Silent start
+        const dailyTaskRunning = typeof DailysModule !== 'undefined'
+            && DailysModule.activeTimer
+            && !DailysModule.activeTimer.isBreak;
+
+        const productiveRunning = otherStopwatchRunning || dailyTaskRunning;
+
+        if (productiveRunning && wasteTime.isRunning) {
+            this.stopStopwatch(WASTE_TIME_ID, true);
+        } else if (!productiveRunning && !wasteTime.isRunning) {
+            this.startStopwatch(WASTE_TIME_ID, true);
         }
     },
 
@@ -294,7 +297,7 @@ const AdvancedStopwatchesModule = {
         return `
             <div class="stopwatch-card ${sw.isRunning ? 'running' : ''} waste-time-card" 
                  data-stopwatch-id="${sw.id}"
-                 style="--stopwatch-color: #ef4444;">
+                 style="--stopwatch-color: var(--color-danger);">
                 
                 <div class="stopwatch-card-header">
                     <div class="stopwatch-name">
@@ -452,7 +455,6 @@ const AdvancedStopwatchesModule = {
                     const offset = circumference * (1 - progress);
                     progressCircle.style.strokeDashoffset = offset;
 
-                    // Update percentage
                     const card = progressCircle.closest('.stopwatch-card');
                     const percentageEl = card?.querySelector('.circular-percentage');
                     if (percentageEl) {
@@ -460,20 +462,29 @@ const AdvancedStopwatchesModule = {
                     }
                 }
 
-                // Update goal info
                 const card = document.querySelector(`[data-stopwatch-id="${sw.id}"]`);
                 if (card) {
                     const goalMs = sw.goalMs || 8 * 60 * 60 * 1000;
                     const progress = Math.min(elapsedMs / goalMs, 1);
                     const percentProgress = Math.round(progress * 100);
 
-                    // Update border progress
                     card.style.setProperty('--progress', percentProgress);
 
-                    // Update goal info text
                     const goalInfo = card.querySelector('.stopwatch-goal-info');
                     if (goalInfo) {
                         goalInfo.textContent = `Goal: ${this.formatGoal(goalMs)} • ${formatTimeShort(elapsedMs)} tracked`;
+                    }
+                }
+
+                // Session duration warning (skip waste-time)
+                if (sw.id !== WASTE_TIME_ID && App.maxSessionMs) {
+                    const sessionMs = sw.startTimestamp ? (Date.now() - sw.startTimestamp) : 0;
+                    const card2 = document.querySelector(`[data-stopwatch-id="${sw.id}"]`);
+                    if (sessionMs >= App.maxSessionMs) {
+                        App.fireSessionWarning(sw.name);
+                        card2?.classList.add('session-exceeded');
+                    } else {
+                        card2?.classList.remove('session-exceeded');
                     }
                 }
             }

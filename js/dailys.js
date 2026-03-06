@@ -233,6 +233,10 @@ const DailysModule = {
 
         StorageManager.saveActiveTimer(this.activeTimer);
 
+        if (App.sessionWarningFired) {
+            delete App.sessionWarningFired[name];
+        }
+
         // Clear input
         if (this.elements.timeLogTaskInput) {
             this.elements.timeLogTaskInput.value = '';
@@ -289,18 +293,39 @@ const DailysModule = {
         if (!this.activeTimer) return;
 
         const endTime = Date.now();
-        const entry = {
-            id: generateId(),
-            taskName: this.activeTimer.taskName,
-            startTime: this.activeTimer.startTime,
-            endTime: endTime,
-            isBreak: this.activeTimer.isBreak
-        };
-
-        // Save to the date when the timer was started
-        StorageManager.addTimeLogEntry(this.activeTimer.dateStr, entry);
+        const startDate = getDateString(new Date(this.activeTimer.startTime));
+        const endDate = getDateString(new Date(endTime));
 
         const wasBreak = this.activeTimer.isBreak;
+
+        // Handle cross-day entries: split at midnight
+        if (startDate !== endDate) {
+            const midnight = new Date(endTime);
+            midnight.setHours(0, 0, 0, 0);
+
+            StorageManager.addTimeLogEntry(startDate, {
+                id: generateId(),
+                taskName: this.activeTimer.taskName,
+                startTime: this.activeTimer.startTime,
+                endTime: midnight.getTime(),
+                isBreak: wasBreak
+            });
+            StorageManager.addTimeLogEntry(endDate, {
+                id: generateId(),
+                taskName: this.activeTimer.taskName,
+                startTime: midnight.getTime(),
+                endTime: endTime,
+                isBreak: wasBreak
+            });
+        } else {
+            StorageManager.addTimeLogEntry(startDate, {
+                id: generateId(),
+                taskName: this.activeTimer.taskName,
+                startTime: this.activeTimer.startTime,
+                endTime: endTime,
+                isBreak: wasBreak
+            });
+        }
 
         // Sync: stop Focus stopwatch (unless this call came from Focus)
         if (!wasBreak && !fromFocus && !this._syncing && typeof AdvancedStopwatchesModule !== 'undefined') {
@@ -323,13 +348,14 @@ const DailysModule = {
         // Re-render log entries
         this.renderTimeLog();
 
+        // Waste time keeps running -- only stops when a new task starts.
+        // Trigger immediate check so waste time auto-starts if nothing productive is running.
+        if (typeof AdvancedStopwatchesModule !== 'undefined') {
+            AdvancedStopwatchesModule.checkWasteTimeAutoStart();
+        }
+
         if (!silent) {
-            if (wasBreak) {
-                App.showToast('Break ended');
-            } else {
-                // Auto-start break after stopping a task
-                this.startBreak();
-            }
+            App.showToast(wasBreak ? 'Break ended' : 'Task stopped');
         }
     },
 
@@ -405,6 +431,15 @@ const DailysModule = {
         if (!this.activeTimer || !this.elements.timeLogActiveElapsed) return;
         const elapsed = Date.now() - this.activeTimer.startTime;
         this.elements.timeLogActiveElapsed.textContent = this.formatElapsed(elapsed);
+
+        if (!this.activeTimer.isBreak && App.maxSessionMs && elapsed >= App.maxSessionMs) {
+            App.fireSessionWarning(this.activeTimer.taskName);
+            if (this.elements.timeLogActive) {
+                this.elements.timeLogActive.classList.add('session-exceeded');
+            }
+        } else if (this.elements.timeLogActive) {
+            this.elements.timeLogActive.classList.remove('session-exceeded');
+        }
     },
 
     /**
@@ -426,25 +461,47 @@ const DailysModule = {
             return;
         }
 
+        const allTasks = StorageManager.getTasks();
+        const allStopwatches = StorageManager.getStopwatches();
+
         this.elements.timeLogEntries.innerHTML = [...entries].reverse().map(entry => {
             const startStr = this.formatTime12h(entry.startTime);
             const endStr = this.formatTime12h(entry.endTime);
             const duration = entry.endTime - entry.startTime;
-            const durationStr = this.formatDurationReadable(duration);
             const durationShort = this.formatDurationShort(duration);
-            const displayName = entry.isBreak
-                ? this.escapeHtml(entry.taskName)
-                : this.escapeHtml(entry.taskName);
+            const displayName = this.escapeHtml(entry.taskName);
+
+            let nodeColor = '';
+            let taskPriority = '';
+            if (!entry.isBreak) {
+                const task = allTasks.find(t => t.title === entry.taskName);
+                if (task) {
+                    taskPriority = task.priority || '';
+                    if (task.assignedStopwatch) {
+                        const sw = allStopwatches.find(s => s.id === task.assignedStopwatch);
+                        if (sw) nodeColor = sw.color;
+                    }
+                }
+            }
+
+            const nodeStyle = nodeColor ? `border-color: ${nodeColor}` : '';
+            const durStyle = nodeColor && !entry.isBreak
+                ? `background: ${nodeColor}20; color: ${nodeColor}`
+                : '';
+
+            const priorityHtml = taskPriority && !entry.isBreak
+                ? `<span class="tl-entry-priority tl-entry-priority--${taskPriority}"></span>`
+                : '';
 
             return `
                 <div class="time-log-entry ${entry.isBreak ? 'is-break' : ''}" data-entry-id="${entry.id}">
-                    <div class="tl-entry-node ${entry.isBreak ? 'break' : 'task'}"></div>
-                    <div class="tl-entry-content">
-                        <div class="tl-entry-header">
-                            <span class="tl-entry-name">${entry.isBreak ? 'Break' : displayName}</span>
-                            <span class="tl-entry-dur">${durationShort}</span>
-                        </div>
-                        <div class="tl-entry-time">${startStr} — ${endStr}</div>
+                    <div class="tl-entry-node ${entry.isBreak ? 'break' : 'task'}" style="${nodeStyle}"></div>
+                    <div class="tl-entry-content" ${nodeColor ? `style="border-left: 2px solid ${nodeColor}"` : ''}>
+                        <span class="tl-entry-time">${startStr} — ${endStr}</span>
+                        <span class="tl-entry-sep">|</span>
+                        ${priorityHtml}
+                        <span class="tl-entry-name">${entry.isBreak ? 'Break' : displayName}</span>
+                        <span class="tl-entry-dur" ${durStyle ? `style="${durStyle}"` : ''}>${durationShort}</span>
                     </div>
                     <button class="time-log-entry-delete" data-delete-entry="${entry.id}" title="Delete entry">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -489,13 +546,18 @@ const DailysModule = {
             }
         });
 
-        // Get waste time from the waste stopwatch for today
+        // Get waste time
         if (isToday && typeof AdvancedStopwatchesModule !== 'undefined') {
             const wasteSw = AdvancedStopwatchesModule.stopwatches.find(sw => sw.id === WASTE_TIME_ID);
             if (wasteSw) {
                 wasteMs = TimeTracker.getElapsedMs(wasteSw);
             }
+        } else {
+            const history = StorageManager.getHistory();
+            const wasteRecord = history.find(h => h.stopwatchId === WASTE_TIME_ID && h.date === dateStr);
+            if (wasteRecord) wasteMs = wasteRecord.totalMs || 0;
         }
+        wasteMs = Math.min(wasteMs, 24 * 60 * 60 * 1000);
 
         // Tasks completed today
         const tasks = StorageManager.getTasks();
@@ -639,7 +701,7 @@ const DailysModule = {
             ? tasks.filter(t => t.title.toLowerCase().includes(query))
             : tasks;
 
-        const priorityColors = { low: '#22c55e', medium: '#eab308', high: '#ef4444' };
+        const priorityColors = { low: 'var(--color-success)', medium: 'var(--color-warning)', high: 'var(--color-danger)' };
 
         let html = '';
 
@@ -736,10 +798,12 @@ const DailysModule = {
         if (form) {
             form.style.display = 'flex';
             const titleInput = document.getElementById('quick-task-title');
-            // Pre-fill with whatever was typed in the search
             if (titleInput && this.elements.timeLogTaskInput) {
                 titleInput.value = this.elements.timeLogTaskInput.value.trim();
                 this.elements.timeLogTaskInput.value = '';
+            }
+            if (typeof TasksModule !== 'undefined') {
+                TasksModule.populateStopwatchSelect('quick-task-stopwatch');
             }
             titleInput?.focus();
         }
@@ -759,6 +823,7 @@ const DailysModule = {
     quickCreateAndStart() {
         const titleInput = document.getElementById('quick-task-title');
         const prioritySelect = document.getElementById('quick-task-priority');
+        const swSelect = document.getElementById('quick-task-stopwatch');
 
         const title = titleInput?.value.trim();
         if (!title) {
@@ -767,7 +832,12 @@ const DailysModule = {
             return;
         }
 
-        // Create the task in the Tasks database
+        if (!swSelect?.value) {
+            App.showToast('Please assign a focus stopwatch');
+            swSelect?.focus();
+            return;
+        }
+
         const taskData = {
             title,
             description: '',
@@ -775,7 +845,7 @@ const DailysModule = {
             status: 'in-progress',
             tags: [],
             subtasks: [],
-            assignedStopwatch: null
+            assignedStopwatch: swSelect.value
         };
         StorageManager.addTask(taskData);
 
@@ -904,7 +974,7 @@ const DailysModule = {
     },
 
     renderTaskItem(task, index, listType) {
-        const priorityColors = { low: '#22c55e', medium: '#eab308', high: '#ef4444' };
+        const priorityColors = { low: 'var(--color-success)', medium: 'var(--color-warning)', high: 'var(--color-danger)' };
         const priorityLabels = { low: 'L', medium: 'M', high: 'H' };
         const isCompleted = listType === 'done';
 
@@ -1115,7 +1185,7 @@ const DailysModule = {
             return;
         }
 
-        const priorityColors = { low: '#22c55e', medium: '#eab308', high: '#ef4444' };
+        const priorityColors = { low: 'var(--color-success)', medium: 'var(--color-warning)', high: 'var(--color-danger)' };
 
         list.innerHTML = tasks.map(task => `
             <label class="task-picker-item">
