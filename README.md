@@ -1,51 +1,40 @@
-# TimeVault ⏱️
+<h1 align="center">TimeVault</h1></br>
 
-A modern, feature-rich time management web application built with vanilla JavaScript. Track your time, manage tasks, and reflect on your daily progress – all in one beautiful interface.
+<p align="center">
+<img src="assets/timevault-logo.png" width="20%" height="20%"/>
+</p>
 
-## ✨ Features
+<p align="center">
+A modern, feature-rich time management web application built with vanilla JavaScript.
+Track your time, manage tasks, and reflect on your daily progress – all in one beautiful interface.
+</p>
 
-### 🕐 Clock & Alarms
-- Beautiful analog/digital clock display
-- Multiple alarm support with custom sounds
-- Notification alerts
+## Screenshots
+<p align="center">
+<img src="assets/screenshots/screenshot_1.png" width="30%" height="auto">
+<img src="assets/screenshots/screenshot_2.png" width="30%" height="auto">
+<img src="assets/screenshots/screenshot_3.png" width="30%" height="auto">
+</p>
 
-### ⏱️ Advanced Stopwatches
-- **Unlimited stopwatch instances** - Create stopwatches for different projects/activities
-- **Category organization** - Group stopwatches by category (Work, Study, Exercise, etc.)
-- **Color coding** - Assign colors for visual distinction
-- **Background tracking** - Continues timing even when browser is closed
-- **Daily/weekly goals** - Set time goals per stopwatch
-- **Session history** - View detailed time logs
+## Features
+- Beautiful analog/digital clock with multiple alarm support
+- Unlimited stopwatch instances with category organization and color coding
+- Background tracking that continues even when the browser is closed
+- Daily and weekly time goals per stopwatch with session history
+- Centralized task database with subtasks, priorities, and status tracking
+- Daily journal with morning routine, planning, reflection, and date navigation
+- Graphs and analytics with daily bar charts, category analysis, and trends
+- Dark and light theme support
+- Data export and backup
+- All data stored locally, never leaves your device
 
-### 📋 Task Database
-- **Centralized task management** - All tasks in one place
-- **Subtasks** - Break down tasks into smaller steps
-- **Priority levels** - Low, Medium, High
-- **Status tracking** - To Do, In Progress, Done
-- **Tags** - Organize with custom tags
-- **Stopwatch assignment** - Link tasks to time tracking
+## Tech Stack
+- HTML5
+- CSS3 with custom properties
+- Vanilla JavaScript (ES6+)
+- LocalStorage for client-side persistence
 
-### 📓 Daily Journal
-- **Morning Routine checklist** - Track daily habits
-- **Plan for Today** - Add tasks from Task Database for daily focus
-- **What I Did** - Completed tasks automatically appear here
-- **Blocked/Issues** - Note what's blocking progress
-- **For Tomorrow** - Plan ahead
-- **Reflection** - End-of-day thoughts
-- **Date navigation** - Review past journal entries
-
-### 📊 Graphs & Analytics
-- **Daily bar charts** - Time distribution per stopwatch
-- **Category analysis** - See time spent by category
-- **Weekly/monthly trends** - Track your patterns over time
-- **Goals progress** - Visual goal completion tracking
-
-### ⚙️ Settings
-- **Dark/Light theme** - Comfortable viewing
-- **Data export** - Backup your data
-- **Customizable UI** - Personalize your experience
-
-## 🚀 Getting Started
+## Getting Started
 
 1. Clone the repository:
    ```bash
@@ -63,59 +52,40 @@ A modern, feature-rich time management web application built with vanilla JavaSc
    http://localhost:8080
    ```
 
-## 📁 Project Structure
-
-```
-timevault/
-├── index.html          # Main HTML structure
-├── js/
-│   ├── app.js          # Main app controller
-│   ├── storage.js      # LocalStorage management
-│   ├── clock.js        # Clock display
-│   ├── alarm.js        # Alarm functionality
-│   ├── timer.js        # Timer features
-│   ├── stopwatch.js    # Basic stopwatch
-│   ├── advancedStopwatches.js  # Multi-stopwatch system
-│   ├── tasks.js        # Task database
-│   ├── dailys.js       # Daily journal
-│   └── graphs.js       # Analytics & charts
-├── styles/
-│   ├── base.css        # CSS variables & reset
-│   └── components.css  # Component styles
-└── assets/
-    └── sounds/         # Alarm sounds
-```
-
-## 💾 Data Storage
-
-All data is stored locally in your browser using localStorage. Your data never leaves your device.
-
-**Storage keys:**
-- `focusclock_stopwatches` - Stopwatch data
-- `focusclock_tasks` - Task database
-- `focusclock_dailys` - Daily journal entries
-- `focusclock_sessions` - Work session history
-- `focusclock_settings` - User preferences
-
-## 🛠️ Tech Stack
-
-- **HTML5** - Semantic structure
-- **CSS3** - Modern styling with CSS variables
-- **Vanilla JavaScript** - No frameworks, pure ES6+
-- **LocalStorage** - Client-side data persistence
-
-## 📱 Browser Support
-
-Works on all modern browsers:
+## Browser Support
 - Chrome 80+
 - Firefox 75+
 - Safari 13+
 - Edge 80+
 
-## 📄 License
+## How to contribute
+- Before making a feature request or bug report, make sure you have the latest version and the request is unique
+- If you want to implement a new feature or fix a bug, make sure no one is already working on it and leave a comment
 
-MIT License - feel free to use and modify!
+## TODO / Future Features
 
----
+- Make plugin with Arch
 
-Made with ❤️ for productivity enthusiasts
+```
+MIT License
+
+Copyright (c) 2025 - Present
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
