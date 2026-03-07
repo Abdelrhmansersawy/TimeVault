@@ -421,9 +421,15 @@ const DailysModule = {
         this.elements.timeLogActive.style.display = 'block';
         this.elements.timeLogStartControls.style.display = 'none';
 
-        this.elements.timeLogActiveLabel.textContent = this.activeTimer.isBreak
-            ? `[Break] ${this.activeTimer.taskName}`
-            : this.activeTimer.taskName;
+        let labelText = this.activeTimer.taskName;
+        if (this.activeTimer.isBreak) {
+            if (this.activeTimer.taskName === "Untracked Time" || this.activeTimer.taskName === "Auto Break (Idle)") {
+                labelText = `[Untracked] Untracked Time`;
+            } else {
+                labelText = `[Break] ${this.activeTimer.taskName}`;
+            }
+        }
+        this.elements.timeLogActiveLabel.textContent = labelText;
 
         this.elements.timeLogActiveStart.textContent = this.formatTime12h(this.activeTimer.startTime);
 
@@ -547,14 +553,28 @@ const DailysModule = {
                 ? `<span class="tl-entry-priority tl-entry-priority--${taskPriority}"></span>`
                 : '';
 
+            let entryName = displayName;
+            let isUntracked = false;
+            if (entry.isBreak) {
+                if (entry.taskName === "Untracked Time" || entry.taskName === "Auto Break (Idle)") {
+                    entryName = "Untracked Time";
+                    isUntracked = true;
+                } else {
+                    entryName = "Break";
+                }
+            }
+
+            let entryClass = entry.isBreak ? 'break' : 'task';
+            if (isUntracked) entryClass = 'untracked';
+
             return `
-                <div class="time-log-entry ${entry.isBreak ? 'is-break' : ''}" data-entry-id="${entry.id}">
-                    <div class="tl-entry-node ${entry.isBreak ? 'break' : 'task'}" style="${nodeStyle}"></div>
+                <div class="time-log-entry ${entry.isBreak ? 'is-break' : ''} ${isUntracked ? 'is-untracked' : ''}" data-entry-id="${entry.id}">
+                    <div class="tl-entry-node ${entryClass}" style="${nodeStyle}"></div>
                     <div class="tl-entry-content" ${nodeColor ? `style="border-left: 2px solid ${nodeColor}"` : ''}>
                         <span class="tl-entry-time">${startStr} — ${endStr}</span>
                         <span class="tl-entry-sep">|</span>
                         ${priorityHtml}
-                        <span class="tl-entry-name">${entry.isBreak ? 'Break' : displayName}</span>
+                        <span class="tl-entry-name">${entryName}</span>
                         <span class="tl-entry-dur" ${durStyle ? `style="${durStyle}"` : ''}>${durationShort}</span>
                     </div>
                     <div class="time-log-entry-actions">

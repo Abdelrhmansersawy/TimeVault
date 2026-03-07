@@ -2440,6 +2440,15 @@
     opacity: 0.9;
 }
 
+.timeline-block.untracked {
+    background: var(--color-text-muted);
+    opacity: 0.4;
+}
+
+.timeline-block.untracked:hover {
+    opacity: 0.7;
+}
+
 .timeline-labels {
     display: flex;
     justify-content: space-between;
@@ -2466,6 +2475,12 @@
     animation: breakPulse 3s ease-in-out infinite;
 }
 
+.time-log-active.is-untracked {
+    background: rgba(166, 173, 200, 0.08);
+    border-color: rgba(166, 173, 200, 0.25);
+    animation: untrackedPulse 3s ease-in-out infinite;
+}
+
 @keyframes timerPulse {
 
     0%,
@@ -2487,6 +2502,18 @@
 
     50% {
         box-shadow: 0 0 16px 2px rgba(243, 139, 168, 0.12);
+    }
+}
+
+@keyframes untrackedPulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(166, 173, 200, 0);
+    }
+
+    50% {
+        box-shadow: 0 0 16px 2px rgba(166, 173, 200, 0.12);
     }
 }
 
@@ -2512,6 +2539,10 @@
 
 .time-log-active.is-break .time-log-active-elapsed {
     color: #f38ba8;
+}
+
+.time-log-active.is-untracked .time-log-active-elapsed {
+    color: var(--color-text-muted);
 }
 
 .time-log-active-since {
@@ -2646,6 +2677,11 @@
     border-color: #f38ba8;
 }
 
+.tl-entry-node.untracked {
+    border-color: var(--color-text-muted);
+    border-style: dashed;
+}
+
 .tl-entry-node.task {
     border-color: #3b82f6;
 }
@@ -2696,6 +2732,11 @@
     color: #f5a0b5;
 }
 
+.time-log-entry.is-untracked .tl-entry-dur {
+    background: rgba(166, 173, 200, 0.1);
+    color: var(--color-text-muted);
+}
+
 .tl-entry-sep {
     color: var(--color-border);
     font-weight: 300;
@@ -2718,6 +2759,12 @@
 .time-log-entry.is-break .tl-entry-name {
     color: var(--color-text-muted);
     font-style: italic;
+}
+
+.time-log-entry.is-untracked .tl-entry-name {
+    color: var(--color-text-muted);
+    font-style: italic;
+    opacity: 0.8;
 }
 
 /* Priority dot in time log entry */
