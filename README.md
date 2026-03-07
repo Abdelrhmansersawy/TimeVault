@@ -45,7 +45,21 @@ You can install TimeVault globally on your system with a single command:
 curl -fsSL https://raw.githubusercontent.com/Abdelrhmansersawy/TimeVault/main/install.sh | bash
 ```
 *This downloads the application to `~/.timevault` and creates a symlink in `~/.local/bin` so you can use the `timevault` command everywhere.*
-*(Note: Windows users should use Windows Subsystem for Linux (WSL) to use the bash script).*
+*(Note: Windows users can use Windows Subsystem for Linux (WSL) to use the bash script).*
+
+### Windows Installation (Native)
+If you prefer not to use WSL, you can run the Python server directly on Windows:
+1. Clone the repository:
+   ```cmd
+   git clone https://github.com/Abdelrhmansersawy/TimeVault.git
+   cd TimeVault
+   ```
+2. Start the backend server:
+   ```cmd
+   python server.py
+   ```
+3. Open your browser and navigate to `http://localhost:51888`
+*(To use the terminal CLI natively on Windows, open a new Command Prompt in the folder and run `python timevault_cli [command]`).*
 
 ### Manual Install
 1. Clone the repository:
