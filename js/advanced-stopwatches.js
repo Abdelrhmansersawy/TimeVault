@@ -306,7 +306,7 @@ const AdvancedStopwatchesModule = {
         }
 
         return `
-            <div class="stopwatch-card ${sw.isRunning ? 'running' : ''} ${wasteTimeClass}" 
+            <div class="stopwatch-card ${sw.isRunning ? 'running' : ''}" 
                  data-stopwatch-id="${sw.id}"
                  style="--stopwatch-color: ${sw.color || '#6366f1'}; --stopwatch-color-rgb: ${colorRGBString}; --progress: ${percentProgress};">
                 

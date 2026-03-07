@@ -185,7 +185,8 @@ const StorageManager = {
                 name: 'Break Time',
                 color: '#f38ba8', // Pink color for breaks
                 icon: 'coffee',
-                order: -2
+                order: -2,
+                isBuiltIn: true
             });
         }
 
@@ -196,7 +197,8 @@ const StorageManager = {
                 name: 'Untracked Time',
                 color: '#6b7280', // Grey color for untracked
                 icon: 'activity',
-                order: -1
+                order: -1,
+                isBuiltIn: true
             });
         }
 
@@ -207,7 +209,8 @@ const StorageManager = {
                 name: 'Tracked Time',
                 color: '#6366f1', // Accent color for tracked
                 icon: 'check-circle',
-                order: -3 // Keep it at the very top
+                order: -3, // Keep it at the very top
+                isBuiltIn: true
             });
         }
 
