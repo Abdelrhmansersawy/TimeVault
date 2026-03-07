@@ -456,9 +456,18 @@
             <section id="stopwatches-section" class="section">
                 <div class="section-header">
                     <h2>Focus Stopwatches</h2>
-                    <button id="add-stopwatch-btn" class="btn btn-primary">
-                        <span>+ New Stopwatch</span>
-                    </button>
+                    <div style="display: flex; gap: var(--spacing-sm); align-items: center;">
+                        <select id="stopwatches-timeframe-select" class="form-input"
+                            style="width: 140px; padding: var(--spacing-xs) var(--spacing-sm); border-radius: var(--radius-md);">
+                            <option value="today">Today</option>
+                            <option value="7days">Last 7 Days</option>
+                            <option value="30days">Last 30 Days</option>
+                            <option value="alltime">All Time</option>
+                        </select>
+                        <button id="add-stopwatch-btn" class="btn btn-primary">
+                            <span>+ New Stopwatch</span>
+                        </button>
+                    </div>
                 </div>
                 <div id="stopwatches-grid" class="stopwatches-grid">
                     <!-- Stopwatches will be rendered here -->

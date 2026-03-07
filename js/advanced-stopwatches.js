@@ -234,10 +234,62 @@ const AdvancedStopwatchesModule = {
 
         // Add event listeners
         this.addCardEventListeners();
+
+        // Add timeframe listener if not bound
+        const selectEl = document.getElementById('stopwatches-timeframe-select');
+        if (selectEl && !selectEl.dataset.bound) {
+            selectEl.addEventListener('change', () => this.render());
+            selectEl.dataset.bound = 'true';
+        }
+    },
+
+    getAggregatedElapsedMs(sw, timeframe) {
+        if (timeframe === 'today') {
+            if (sw.id === 'tracked-time') {
+                // Math sum of today's actual stopwatches
+                return this.stopwatches.reduce((sum, s) => {
+                    return !s.isBuiltIn ? sum + TimeTracker.getElapsedMs(s) : sum;
+                }, 0);
+            }
+            return TimeTracker.getElapsedMs(sw);
+        }
+
+        // Sum historical records up to N days
+        let days = 30;
+        if (timeframe === '7days') days = 7;
+        else if (timeframe === 'alltime') days = 9999;
+
+        let total = 0;
+
+        if (sw.id === 'tracked-time') {
+            // Tracked time is the sum of all NON-builtin stopwatches historically
+            const history = StorageManager.getHistory();
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - days);
+
+            const builtinIds = ['untracked', 'break-time', 'tracked-time'];
+            history.forEach(h => {
+                if (!builtinIds.includes(h.stopwatchId) && new Date(h.date) >= cutoffDate) {
+                    total += h.totalMs;
+                }
+            });
+
+            // Add current live ongoing today
+            total += this.stopwatches.reduce((sum, s) => !s.isBuiltIn ? sum + TimeTracker.getElapsedMs(s) : sum, 0);
+            return total;
+        }
+
+        const history = StorageManager.getHistoryForStopwatch(sw.id, days);
+        history.forEach(h => { total += h.totalMs; });
+        // Add current live ongoing today manually since history cuts at midnight
+        total += TimeTracker.getElapsedMs(sw);
+        return total;
     },
 
     renderStopwatchCard(sw) {
-        const elapsedMs = TimeTracker.getElapsedMs(sw);
+        // Set timeframe default
+        const timeframe = document.getElementById('stopwatches-timeframe-select')?.value || 'today';
+        const elapsedMs = this.getAggregatedElapsedMs(sw, timeframe);
         const goalMs = sw.goalMs || 8 * 60 * 60 * 1000; // Default 8 hours
         const progress = Math.min(elapsedMs / goalMs, 1);
         const percentProgress = Math.round(progress * 100);
@@ -248,13 +300,9 @@ const AdvancedStopwatchesModule = {
         const colorRGB = this.hexToRgb(sw.color || '#6366f1');
         const colorRGBString = colorRGB ? `${colorRGB.r}, ${colorRGB.g}, ${colorRGB.b}` : '99, 102, 241';
 
-        // Check if this is the built-in waste time stopwatch
-        const isWasteTime = sw.id === WASTE_TIME_ID;
-        const wasteTimeClass = isWasteTime ? 'waste-time-card' : '';
-
-        // Special rendering for Waste Time - simplified, no edit, no goal
-        if (isWasteTime) {
-            return this.renderWasteTimeCard(sw, elapsedMs);
+        // Check if this is a built-in auto-managed stopwatch
+        if (sw.isBuiltIn) {
+            return this.renderBuiltInCard(sw, elapsedMs, percentProgress, offset, circumference, colorRGBString);
         }
 
         return `
@@ -292,12 +340,12 @@ const AdvancedStopwatchesModule = {
         `;
     },
 
-    // Special simplified rendering for Waste Time - no goal, no edit, no controls (auto-managed)
-    renderWasteTimeCard(sw, elapsedMs) {
+    // Special simplified rendering for Built-In stopwatches - no user edit, auto-managed
+    renderBuiltInCard(sw, elapsedMs, percentProgress, offset, circumference, colorRGBString) {
         return `
-            <div class="stopwatch-card ${sw.isRunning ? 'running' : ''} waste-time-card" 
+            <div class="stopwatch-card ${sw.isRunning ? 'running' : ''} built-in-card" 
                  data-stopwatch-id="${sw.id}"
-                 style="--stopwatch-color: var(--color-danger);">
+                 style="--stopwatch-color: ${sw.color}; --stopwatch-color-rgb: ${colorRGBString}; --progress: ${percentProgress};">
                 
                 <div class="stopwatch-card-header">
                     <div class="stopwatch-name">

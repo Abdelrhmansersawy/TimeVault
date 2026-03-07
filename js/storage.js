@@ -178,6 +178,17 @@ const StorageManager = {
     getStopwatches() {
         let stopwatches = this.get(this.KEYS.STOPWATCHES, []);
 
+        // Ensure Break Time always exists
+        if (!stopwatches.find(sw => sw.id === 'break-time')) {
+            stopwatches.unshift({
+                id: 'break-time',
+                name: 'Break Time',
+                color: '#f38ba8', // Pink color for breaks
+                icon: 'coffee',
+                order: -2
+            });
+        }
+
         // Ensure Untracked Time always exists
         if (!stopwatches.find(sw => sw.id === 'untracked')) {
             stopwatches.unshift({
@@ -185,10 +196,21 @@ const StorageManager = {
                 name: 'Untracked Time',
                 color: '#6b7280', // Grey color for untracked
                 icon: 'activity',
-                order: -1 // Keep it at the top
+                order: -1
             });
-            // Don't save it to storage necessarily, just inject it at runtime
         }
+
+        // Ensure Tracked Time always exists
+        if (!stopwatches.find(sw => sw.id === 'tracked-time')) {
+            stopwatches.unshift({
+                id: 'tracked-time',
+                name: 'Tracked Time',
+                color: '#6366f1', // Accent color for tracked
+                icon: 'check-circle',
+                order: -3 // Keep it at the very top
+            });
+        }
+
         return stopwatches;
     },
 
@@ -213,13 +235,13 @@ const StorageManager = {
     },
 
     deleteStopwatch(id) {
-        if (id === 'untracked') return false; // Cannot delete built-in untracked time
+        if (id === 'untracked' || id === 'break-time' || id === 'tracked-time') return false; // Cannot delete built-ins
         // Soft delete - mark as deleted but keep for history
         return this.updateStopwatch(id, { deleted: true, isRunning: false });
     },
 
     permanentlyDeleteStopwatch(id) {
-        if (id === 'untracked') return false;
+        if (id === 'untracked' || id === 'break-time' || id === 'tracked-time') return false;
         const stopwatches = this.getStopwatches().filter(sw => sw.id !== id);
         return this.saveStopwatches(stopwatches);
     },

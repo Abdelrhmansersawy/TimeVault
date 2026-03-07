@@ -358,6 +358,9 @@ const DailysModule = {
             if (this.activeTimer.taskName === "Untracked Time" || this.activeTimer.taskName === "Auto Break (Idle)") {
                 StorageManager.addHistoryRecord({ stopwatchId: 'untracked', date: startDate, totalMs: midnight.getTime() - this.activeTimer.startTime });
                 StorageManager.addHistoryRecord({ stopwatchId: 'untracked', date: endDate, totalMs: endTime - midnight.getTime() });
+            } else if (wasBreak) {
+                StorageManager.addHistoryRecord({ stopwatchId: 'break-time', date: startDate, totalMs: midnight.getTime() - this.activeTimer.startTime });
+                StorageManager.addHistoryRecord({ stopwatchId: 'break-time', date: endDate, totalMs: endTime - midnight.getTime() });
             }
         } else {
             StorageManager.addTimeLogEntry(startDate, {
@@ -370,6 +373,8 @@ const DailysModule = {
 
             if (this.activeTimer.taskName === "Untracked Time" || this.activeTimer.taskName === "Auto Break (Idle)") {
                 StorageManager.addHistoryRecord({ stopwatchId: 'untracked', date: startDate, totalMs: endTime - this.activeTimer.startTime });
+            } else if (wasBreak) {
+                StorageManager.addHistoryRecord({ stopwatchId: 'break-time', date: startDate, totalMs: endTime - this.activeTimer.startTime });
             }
         }
 
