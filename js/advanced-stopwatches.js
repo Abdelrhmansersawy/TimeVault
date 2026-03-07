@@ -6,10 +6,10 @@
  * - Single active stopwatch rule
  * - Numeric and circular display modes
  * - Absolute time tracking
- * - Built-in "Waste Time" tracker that auto-runs when no other stopwatch is active
+ * - Built-in clocks: Tracked Time, Break Time, Untracked Time (auto-managed, no user controls)
  */
 
-// Built-in Waste Time stopwatch ID (cannot be deleted by user)
+// Built-in auto-idle stopwatch ID (runs when no productive or break stopwatch is active)
 const WASTE_TIME_ID = 'untracked';
 
 const AdvancedStopwatchesModule = {
@@ -364,15 +364,6 @@ const AdvancedStopwatchesModule = {
                     </div>
                 </div>
 
-                ${sw.id !== 'tracked-time' ? `
-                <div class="stopwatch-card-controls" style="margin-top: var(--spacing-md); justify-content: center;">
-                    ${sw.isRunning ? `
-                        <button class="btn btn-secondary btn-large" data-stop="${sw.id}" style="width: 100%; max-width: 150px;">Stop</button>
-                    ` : `
-                        <button class="btn btn-primary btn-large" data-start="${sw.id}" style="width: 100%; max-width: 150px;">Start</button>
-                    `}
-                </div>
-                ` : ''}
             </div>
         `;
     },

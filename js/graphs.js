@@ -110,8 +110,8 @@ const GraphsModule = {
         // Render global overview (uses global range)
         this.renderGlobalOverview(displayStopwatches, history, displayDates);
 
-        // Render individual graphs (each can have its own range)
-        this.elements.container.innerHTML = displayStopwatches.map(sw => {
+        // Render individual graphs (each can have its own range) — exclude built-in clocks
+        this.elements.container.innerHTML = displayStopwatches.filter(sw => !sw.isBuiltIn).map(sw => {
             const swHistory = history.filter(h => h.stopwatchId === sw.id);
             // REQ-7: Use per-category range if set, otherwise use global range
             const swRange = this.categoryRanges[sw.id] || this.range;
@@ -136,7 +136,7 @@ const GraphsModule = {
         if (!this.elements.dashboard) return;
         this.elements.dashboard.style.display = 'block';
 
-        const visibleStopwatches = stopwatches.filter(sw => !this.hiddenCategories.has(sw.id));
+        const visibleStopwatches = stopwatches.filter(sw => !this.hiddenCategories.has(sw.id) && !sw.isBuiltIn);
 
         // 1. Calculate Aggregate Stats
         let totalMsAllStopwatches = 0;
@@ -1048,7 +1048,7 @@ const GraphsModule = {
         const days = this.timeAnalysisRange;
         const analysisTypes = [
             { id: 'tracked-time', name: 'Work Time', color: 'var(--color-accent, #6366f1)' },
-            { id: 'break-time', name: 'Waste Time', color: 'var(--color-danger, #e05561)' },
+            { id: 'break-time', name: 'Break Time', color: 'var(--color-danger, #e05561)' },
             { id: 'untracked', name: 'Untracked Time', color: '#6b7280' }
         ];
 
