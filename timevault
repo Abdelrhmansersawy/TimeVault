@@ -46,6 +46,7 @@ show_help() {
     echo "  backup    Provides instructions on how to backup your TimeVault data"
     echo "  daemon    Manage TimeVault as a background service (install, start, stop, status)"
     echo "  --port    Specify a port to run the server on (Usage: timevault open --port 8080)"
+    echo "  --version Print the TimeVault version"
     echo "  --help    Show this help message"
     echo ""
     echo "TimeVault: https://github.com/Abdelrhmansersawy/TimeVault"
@@ -100,7 +101,7 @@ start_server() {
         local TARGET_PORT=$(get_open_port)
         echo "Starting TimeVault server on port $TARGET_PORT..."
         cd "$DIR"
-        python3 -m http.server $TARGET_PORT > /dev/null 2>&1 &
+        python3 "$DIR/server.py" --port $TARGET_PORT > /dev/null 2>&1 &
         echo $! > "$PID_FILE"
         echo $TARGET_PORT > "$PORT_FILE"
         echo "$TARGET_PORT" > "/tmp/timevault-current-run.txt"
@@ -123,9 +124,9 @@ stop_server() {
             rm -f "$PORT_FILE"
         fi
     else
-        # Try to find and kill orphan python http servers just in case
+        # Try to find and kill orphan python servers just in case
         echo "Stopping any orphaned TimeVault servers..."
-        pkill -f "python3 -m http.server" || echo "No servers found to stop."
+        pkill -f "python3.*server.py" || echo "No servers found to stop."
         rm -f "$PORT_FILE"
     fi
 }
@@ -148,6 +149,7 @@ status_server() {
         fi
     else
         echo "🔴 TimeVault Server is STOPPED."
+    fi
 }
 
 manage_daemon() {
@@ -164,7 +166,7 @@ Description=TimeVault Local Server
 After=network.target
 
 [Service]
-ExecStart=/usr/bin/env python3 -m http.server $DEFAULT_PORT
+ExecStart=/usr/bin/env python3 "$DIR/server.py" --port $DEFAULT_PORT
 WorkingDirectory=$DIR
 Restart=always
 RestartSec=3
@@ -227,6 +229,10 @@ while [[ $# -gt 0 ]]; do
         --port)
             DEFAULT_PORT="$2"
             shift 2
+            ;;
+        --version|-v)
+            echo "TimeVault CLI v1.5.0"
+            exit 0
             ;;
         *)
             break

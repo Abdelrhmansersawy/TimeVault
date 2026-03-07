@@ -6,8 +6,11 @@ const App = {
     currentSection: 'timelog',
     previousSection: 'timelog',
 
-    init() {
+    async init() {
         console.log('Time Vault initializing...');
+
+        // Connect to local python backend API
+        await StorageManager.initSync();
 
         // Load settings first so modules have correct state
         this.setupPanelWidth();
@@ -253,8 +256,8 @@ const App = {
             idleTimeout = setTimeout(() => {
                 if (typeof DailysModule !== 'undefined' && DailysModule.startBreak) {
                     if (!DailysModule.activeTimer || !DailysModule.activeTimer.isBreak) {
-                        DailysModule.startBreak("Auto Break (Idle)");
-                        App.showToast("Started break due to 5s inactivity");
+                        DailysModule.startBreak("Untracked Time");
+                        App.showToast("Started untracked time due to 5s inactivity");
                     }
                 }
             }, IDLE_LIMIT);

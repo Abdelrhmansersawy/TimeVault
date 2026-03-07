@@ -60,9 +60,8 @@ const DailysModule = {
         this.elements.routineList = document.getElementById('routine-list');
         this.elements.planList = document.getElementById('plan-list');
         this.elements.doneList = document.getElementById('done-list');
-        this.elements.blockedInput = document.getElementById('daily-blocked');
-        this.elements.tomorrowInput = document.getElementById('daily-tomorrow');
-        this.elements.reflectionInput = document.getElementById('daily-reflection');
+        this.elements.customSectionsContainer = document.getElementById('custom-daily-sections');
+        this.elements.addCustomSectionBtn = document.getElementById('add-custom-section-btn');
         this.elements.addRoutineBtn = document.getElementById('add-routine-btn');
         this.elements.addPlanBtn = document.getElementById('add-plan-btn');
 
@@ -147,22 +146,59 @@ const DailysModule = {
             if (e.key === 'Escape') this.hideQuickTaskForm();
         });
 
-        // Auto-save on text input change
-        const textInputs = [
-            this.elements.blockedInput,
-            this.elements.tomorrowInput,
-            this.elements.reflectionInput
-        ];
+        // Setup custom section schemas if empty
+        this.initializeCustomSectionsSchema();
 
-        textInputs.forEach(input => {
-            input?.addEventListener('input', () => this.scheduleAutoSave());
-        });
+        this.elements.addCustomSectionBtn?.addEventListener('click', () => this.addCustomSectionPrompt());
 
         // Restore active timer from localStorage (page refresh persistence)
         this.restoreActiveTimer();
 
         // Initial render
         this.render();
+    },
+
+    initializeCustomSectionsSchema() {
+        const settings = StorageManager.getSettings();
+        if (!settings.dailyCustomSections) {
+            // Default migration built-for retrocompatibility
+            settings.dailyCustomSections = [
+                { id: 'reflection', title: 'Reflection', color: 'var(--color-accent-light)', hint: 'How did today go? What did you learn?' },
+                { id: 'blockers', title: 'Blockers', color: 'var(--color-danger)', hint: 'What is blocking your progress?' },
+                { id: 'tomorrow', title: 'Tomorrow', color: 'var(--color-success)', hint: 'What needs to happen tomorrow?' }
+            ];
+            StorageManager.saveSettings(settings);
+        }
+    },
+
+    addCustomSectionPrompt() {
+        const title = prompt("Enter a title for the new section:");
+        if (!title) return;
+        const color = prompt("Enter an accent color CSS var (optional, default: var(--color-accent)):") || 'var(--color-accent)';
+        const hint = prompt("Enter placeholder text for this section:");
+
+        const settings = StorageManager.getSettings();
+        const newId = 'custom_' + Date.now();
+        settings.dailyCustomSections.push({
+            id: newId,
+            title: title.trim(),
+            color: color.trim(),
+            hint: hint ? hint.trim() : ''
+        });
+        StorageManager.saveSettings(settings);
+        this.renderContent(); // Refresh the sections UI
+    },
+
+    deleteCustomSection(sectionId) {
+        if (!confirm("Are you sure you want to delete this custom section?")) return;
+        const settings = StorageManager.getSettings();
+        settings.dailyCustomSections = settings.dailyCustomSections.filter(s => s.id !== sectionId);
+        StorageManager.saveSettings(settings);
+        this.renderContent();
+    },
+
+    getCustomSectionsSchema() {
+        return StorageManager.getSettings().dailyCustomSections || [];
     },
 
     // ============================================
@@ -1154,10 +1190,53 @@ const DailysModule = {
         this.renderPlanList(entry.plannedTaskIds || []);
         this.renderDoneList(entry.completedTaskIds || []);
 
-        // Populate text fields
-        if (this.elements.blockedInput) this.elements.blockedInput.value = entry.blocked || '';
-        if (this.elements.tomorrowInput) this.elements.tomorrowInput.value = entry.tomorrow || '';
-        if (this.elements.reflectionInput) this.elements.reflectionInput.value = entry.reflection || '';
+        // Render Right Column Custom Sections
+        this.renderRightColumn(entry.customData || {});
+    },
+
+    renderRightColumn(customData) {
+        if (!this.elements.customSectionsContainer) return;
+
+        const schemas = this.getCustomSectionsSchema();
+        let html = '';
+
+        schemas.forEach(schema => {
+            const value = customData[schema.id] || '';
+            html += `
+                <div class="daily-card" data-custom-section="${schema.id}">
+                    <div class="daily-card-header">
+                        <div class="daily-card-icon" style="--card-accent: ${schema.color || 'var(--color-accent)'}">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                <polyline points="14 2 14 8 20 8" />
+                                <line x1="16" y1="13" x2="8" y2="13" />
+                                <line x1="16" y1="17" x2="8" y2="17" />
+                                <polyline points="10 9 9 9 8 9" />
+                            </svg>
+                        </div>
+                        <h3 class="daily-card-title">${this.escapeHtml(schema.title)}</h3>
+                        <button class="delete-section-btn btn btn-icon btn-ghost btn-sm" data-delete-section="${schema.id}" title="Delete Section" style="margin-left:auto; opacity:0.5;">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </button>
+                    </div>
+                    <textarea class="daily-journal-input daily-journal-custom-input" data-section-id="${schema.id}"
+                        placeholder="${this.escapeHtml(schema.hint || '')}" rows="4">${this.escapeHtml(value)}</textarea>
+                </div>
+            `;
+        });
+
+        this.elements.customSectionsContainer.innerHTML = html;
+
+        // Bind delete buttons
+        this.elements.customSectionsContainer.querySelectorAll('[data-delete-section]').forEach(btn => {
+            btn.addEventListener('click', () => this.deleteCustomSection(btn.dataset.deleteSection));
+        });
+
+        // Bind auto-save inputs
+        this.elements.customSectionsContainer.querySelectorAll('.daily-journal-custom-input').forEach(input => {
+            input.addEventListener('input', () => this.scheduleAutoSave());
+        });
     },
 
     // ============================================
@@ -1542,10 +1621,15 @@ const DailysModule = {
 
         const entry = {
             ...existing,
-            blocked: this.elements.blockedInput?.value || '',
-            tomorrow: this.elements.tomorrowInput?.value || '',
-            reflection: this.elements.reflectionInput?.value || ''
+            customData: existing.customData || {}
         };
+
+        if (this.elements.customSectionsContainer) {
+            this.elements.customSectionsContainer.querySelectorAll('.daily-journal-custom-input').forEach(input => {
+                const id = input.dataset.sectionId;
+                entry.customData[id] = input.value;
+            });
+        }
 
         StorageManager.saveDailyEntry(dateStr, entry);
     },
@@ -1555,9 +1639,7 @@ const DailysModule = {
             routine: [],
             plannedTaskIds: [],
             completedTaskIds: [],
-            blocked: '',
-            tomorrow: '',
-            reflection: '',
+            customData: {},
             timeLog: []
         };
     },

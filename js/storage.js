@@ -37,7 +37,7 @@ const StorageManager = {
     },
 
     /**
-     * Save data to localStorage
+     * Save data to localStorage and sync to backend
      * @param {string} key - Storage key
      * @param {*} value - Data to save
      * @returns {boolean} Success status
@@ -45,6 +45,7 @@ const StorageManager = {
     set(key, value) {
         try {
             localStorage.setItem(key, JSON.stringify(value));
+            this.syncToServer();
             return true;
         } catch (error) {
             console.error(`Error writing to localStorage: ${key}`, error);
@@ -53,15 +54,64 @@ const StorageManager = {
     },
 
     /**
-     * Remove data from localStorage
+     * Remove data from localStorage and sync to backend
      * @param {string} key - Storage key
      */
     remove(key) {
         try {
             localStorage.removeItem(key);
+            this.syncToServer();
         } catch (error) {
             console.error(`Error removing from localStorage: ${key}`, error);
         }
+    },
+
+    // ============================================
+    // API Backend Sync logic
+    // ============================================
+
+    async initSync() {
+        try {
+            const res = await fetch('/api/sync');
+            if (res.ok) {
+                const data = await res.json();
+                if (Object.keys(data).length > 0) {
+                    // Populate local storage from server if server has data
+                    for (const currKey in data) {
+                        localStorage.setItem(currKey, JSON.stringify(data[currKey]));
+                    }
+                } else {
+                    // Server is empty, push our local state to it
+                    this.syncToServer();
+                }
+            }
+        } catch (err) {
+            console.warn('Backend sync API not reachable. Running in standalone local mode.', err);
+        }
+    },
+
+    _syncTimer: null,
+    syncToServer() {
+        if (this._syncTimer) clearTimeout(this._syncTimer);
+        this._syncTimer = setTimeout(async () => {
+            try {
+                // Collect all TimeVault keys
+                const exportData = {};
+                for (let i = 0; i < localStorage.length; i++) {
+                    const keyName = localStorage.key(i);
+                    if (keyName.startsWith('focusclock_')) {
+                        exportData[keyName] = JSON.parse(localStorage.getItem(keyName));
+                    }
+                }
+                await fetch('/api/sync', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(exportData)
+                });
+            } catch (err) {
+                console.warn('Failed to sync to backend.', err);
+            }
+        }, 1000); // Debounce saves by 1 second
     },
 
     // ============================================
