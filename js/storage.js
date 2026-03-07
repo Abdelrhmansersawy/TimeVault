@@ -349,16 +349,26 @@ const StorageManager = {
     },
 
     /**
-     * Get sessions for a specific stopwatch within date range
+     * Get sessions for a specific stopwatch within date range.
+     * Supports passing an array of IDs, or 'tracked-time' for all non-builtin IDs natively.
      */
     getSessionsForStopwatch(stopwatchId, days = 30) {
         const sessions = this.getSessions();
         const cutoffTime = Date.now() - (days * 24 * 60 * 60 * 1000);
 
-        return sessions.filter(s =>
-            s.stopwatchId === stopwatchId &&
-            s.startTime >= cutoffTime
-        );
+        return sessions.filter(s => {
+            if (s.startTime < cutoffTime) return false;
+
+            if (Array.isArray(stopwatchId)) {
+                return stopwatchId.includes(s.stopwatchId);
+            }
+
+            if (stopwatchId === 'tracked-time') {
+                return !['untracked', 'break-time', 'tracked-time'].includes(s.stopwatchId);
+            }
+
+            return s.stopwatchId === stopwatchId;
+        });
     },
 
     /**

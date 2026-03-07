@@ -30,6 +30,7 @@ const GraphsModule = {
     chartType: 'bar', // 'bar' or 'line'
     hiddenCategories: new Set(),
     categoryRanges: {}, // REQ-7: Per-category time range overrides { stopwatchId: rangeDays }
+    timeAnalysisRange: 30, // For Work/Waste/Untracked panels
     zoomRange: null, // { startDate, endDate } or null
     isDragging: false,
     dragStart: null,
@@ -119,7 +120,7 @@ const GraphsModule = {
                 ? swDates.filter(d => d >= this.zoomRange.startDate && d <= this.zoomRange.endDate)
                 : swDates;
             return this.renderGraphCard(sw, swHistory, swDisplayDates, swRange);
-        }).join('') + this.renderWasteTimeAnalysis();
+        }).join('') + this.renderTimeAnalysis();
 
         // Add tooltip event listeners
         this.addTooltipListeners();
@@ -957,6 +958,16 @@ const GraphsModule = {
                 this.render();
             });
         });
+
+        const taRangeSelect = document.getElementById('time-analysis-range');
+        if (taRangeSelect) {
+            const newSelect = taRangeSelect.cloneNode(true);
+            taRangeSelect.replaceWith(newSelect);
+            newSelect.addEventListener('change', (e) => {
+                this.timeAnalysisRange = parseInt(e.target.value);
+                this.render();
+            });
+        }
     },
 
     /**
@@ -1031,22 +1042,45 @@ const GraphsModule = {
     },
 
     /**
-     * Render session analysis section for Waste Time
+     * Render session analysis section for Work, Waste, and Untracked time natively
      */
-    renderWasteTimeAnalysis() {
-        const WASTE_TIME_ID = 'waste-time-builtin';
-        const dangerColor = getComputedStyle(document.body).getPropertyValue('--color-danger').trim() || '#e05561';
-        const sessions = StorageManager.getSessionsForStopwatch(WASTE_TIME_ID, 30);
+    renderTimeAnalysis() {
+        const days = this.timeAnalysisRange;
+        const analysisTypes = [
+            { id: 'tracked-time', name: 'Work Time', color: 'var(--color-accent, #6366f1)' },
+            { id: 'break-time', name: 'Waste Time', color: 'var(--color-danger, #e05561)' },
+            { id: 'untracked', name: 'Untracked Time', color: '#6b7280' }
+        ];
+
+        let contentHtml = '';
+        analysisTypes.forEach(type => {
+            const sessions = StorageManager.getSessionsForStopwatch(type.id, days);
+            if (sessions.length > 0) {
+                contentHtml += `
+                    <h3 class="analysis-section-subheading" style="margin-top: var(--spacing-xl); margin-bottom: var(--spacing-sm); color: var(--color-text-primary);">${this.escapeHtml(type.name)} Analysis</h3>
+                    <div class="analysis-grid">
+                        ${this.renderHourlyHeatmap(type.id, type.name, type.color, days)}
+                        ${this.renderWeeklyPattern(type.id, type.name, type.color, days)}
+                    </div>
+                `;
+            }
+        });
 
         let wasteHtml = '';
-        if (sessions.length > 0) {
+        if (contentHtml) {
             wasteHtml = `
                 <div class="waste-time-analysis">
-                    <h3 class="analysis-section-title">Waste Time Analysis</h3>
-                    <div class="analysis-grid">
-                        ${this.renderHourlyHeatmap(WASTE_TIME_ID, 'Waste Time', dangerColor, 30)}
-                        ${this.renderWeeklyPattern(WASTE_TIME_ID, 'Waste Time', dangerColor, 30)}
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-lg);">
+                        <h3 class="analysis-section-title" style="margin: 0;">Time Analysis</h3>
+                        <div class="section-actions">
+                            <select id="time-analysis-range" class="form-input" style="padding: var(--spacing-xs) var(--spacing-sm);">
+                                <option value="7" ${days === 7 ? 'selected' : ''}>Last 7 days</option>
+                                <option value="30" ${days === 30 ? 'selected' : ''}>Last 30 days</option>
+                                <option value="90" ${days === 90 ? 'selected' : ''}>Last 90 days</option>
+                            </select>
+                        </div>
                     </div>
+                    ${contentHtml}
                 </div>`;
         }
 
