@@ -204,8 +204,8 @@ const App = {
                     </div>
                     <div style="display:flex; align-items:center; gap:12px;">
                         <div style="display:flex; gap:4px;">
-                            <button class="btn btn-icon btn-sm" onclick="App.moveTab('${tab}', -1)" ${index === 0 || !isCustomized ? 'disabled' : ''}>↑</button>
-                            <button class="btn btn-icon btn-sm" onclick="App.moveTab('${tab}', 1)" ${index === savedOrder.length - 1 || !isCustomized ? 'disabled' : ''}>↓</button>
+                            <button class="btn btn-icon btn-ghost btn-sm" onclick="App.moveTab('${tab}', -1)" ${index === 0 || !isCustomized ? 'disabled' : ''}>↑</button>
+                            <button class="btn btn-icon btn-ghost btn-sm" onclick="App.moveTab('${tab}', 1)" ${index === savedOrder.length - 1 || !isCustomized ? 'disabled' : ''}>↓</button>
                         </div>
                         ${toggleHtml}
                     </div>

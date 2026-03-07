@@ -96,6 +96,8 @@ The `timevault` CLI tool offers several helpful commands for managing your appli
 
 ## Native Terminal Application 
 You can use `timevault_cli` to log time natively, completely synced with the Browser!
+*(Note: `timevault_cli` is automatically installed globally when you run `timevault install` or use the quick install script).*
+
 - `timevault_cli start "Task Name"`: Starts tracking a new task visually linked to your frontend.
 - `timevault_cli break [Name]`: Switches your timer into break-mode / untracked time.
 - `timevault_cli stop`: Stops the current timer and pushes it to your Daily Log.

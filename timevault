@@ -57,14 +57,18 @@ install_app() {
     echo "Installing TimeVault CLI..."
     mkdir -p ~/.local/bin
     
-    # Remove existing symlink if it exists
+    # Remove existing symlinks if they exist
     if [ -L ~/.local/bin/timevault ]; then
         rm ~/.local/bin/timevault
     fi
+    if [ -L ~/.local/bin/timevault_cli ]; then
+        rm ~/.local/bin/timevault_cli
+    fi
     
     ln -s "$DIR/timevault" ~/.local/bin/timevault
-    echo "Success! Linked timevault to ~/.local/bin/timevault."
-    echo "Make sure ~/.local/bin is in your PATH. You can now use the 'timevault' command from anywhere."
+    ln -s "$DIR/timevault_cli" ~/.local/bin/timevault_cli
+    echo "Success! Linked timevault and timevault_cli to ~/.local/bin."
+    echo "Make sure ~/.local/bin is in your PATH. You can now use the 'timevault' and 'timevault_cli' commands from anywhere."
 }
 
 uninstall_app() {
@@ -75,8 +79,12 @@ uninstall_app() {
     else
         echo "No symlink found at ~/.local/bin/timevault."
     fi
+    if [ -L ~/.local/bin/timevault_cli ]; then
+        rm ~/.local/bin/timevault_cli
+        echo "Successfully removed symlink from ~/.local/bin/timevault_cli."
+    fi
     echo ""
-    echo "Note: This only removed the CLI command."
+    echo "Note: This only removed the CLI commands."
     echo "To completely remove TimeVault, delete the installation directory: $DIR"
 }
 
