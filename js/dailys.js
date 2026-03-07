@@ -270,6 +270,9 @@ const DailysModule = {
 
         StorageManager.saveActiveTimer(this.activeTimer);
 
+        // Reset idle tracker so a pending timeout doesn't override this new timer
+        if (typeof App !== 'undefined' && App.resetIdleTracker) App.resetIdleTracker();
+
         if (App.sessionWarningFired) {
             delete App.sessionWarningFired[name];
         }
@@ -318,6 +321,9 @@ const DailysModule = {
         };
 
         StorageManager.saveActiveTimer(this.activeTimer);
+
+        // Reset idle tracker so a pending timeout doesn't override this new timer
+        if (typeof App !== 'undefined' && App.resetIdleTracker) App.resetIdleTracker();
         this.showActiveTimer();
         this.startTimerInterval();
         App.showToast('Break started');

@@ -247,24 +247,25 @@ const App = {
         }
     },
 
-    setupIdleTracker() {
-        let idleTimeout;
-        const IDLE_LIMIT = 5000; // 5 seconds of inactivity
+    _idleTimeout: null,
+    IDLE_LIMIT: 5000, // 5 seconds of inactivity
 
+    setupIdleTracker() {
         const resetIdle = () => {
-            clearTimeout(idleTimeout);
-            idleTimeout = setTimeout(() => {
+            clearTimeout(this._idleTimeout);
+            this._idleTimeout = setTimeout(() => {
                 if (typeof DailysModule !== 'undefined' && DailysModule.startBreak) {
-                    // Only start untracked time if NO timer is currently running.
-                    // Previously this also triggered when a task timer was active
-                    // (isBreak=false), which would stop the task and override it.
+                    // Only start untracked time if NO timer is currently running
                     if (!DailysModule.activeTimer) {
                         DailysModule.startBreak("Untracked Time");
                         App.showToast("Started untracked time due to 5s inactivity");
                     }
                 }
-            }, IDLE_LIMIT);
+            }, this.IDLE_LIMIT);
         };
+
+        // Store resetIdle so other modules can call it
+        this.resetIdleTracker = resetIdle;
 
         ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart'].forEach(evt => {
             document.addEventListener(evt, resetIdle, { passive: true });
