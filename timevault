@@ -45,7 +45,6 @@ show_help() {
     echo "  update    Pull the latest changes from git"
     echo "  backup    Provides instructions on how to backup your TimeVault data"
     echo "  daemon    Manage TimeVault as a background service (install, start, stop, status)"
-    echo "  commit    Auto-commit current changes to git (Usage: timevault commit 'msg')"
     echo "  --port    Specify a port to run the server on (Usage: timevault open --port 8080)"
     echo "  --help    Show this help message"
     echo ""
@@ -195,18 +194,6 @@ EOF
     esac
 }
 
-commit_app() {
-    local MSG=$1
-    if [ -z "$MSG" ]; then
-        MSG="chore: timevault auto-commit"
-    fi
-    echo "Committing changes to Git..."
-    cd "$DIR"
-    git add .
-    git commit -m "$MSG"
-    echo "Committed successfully."
-}
-
 backup_app() {
     echo "TimeVault data is stored securely in your browser's LocalStorage."
     echo ""
@@ -271,9 +258,6 @@ case "$1" in
         ;;
     daemon)
         manage_daemon "$2"
-        ;;
-    commit)
-        commit_app "$2"
         ;;
     --help|-h|"")
         show_help
