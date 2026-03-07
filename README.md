@@ -39,12 +39,13 @@ Track your time, manage tasks, and reflect on your daily progress – all in one
 
 ## Getting Started
 
-### Quick Install (Recommended)
+### Quick Install (Recommended for Linux/macOS)
 You can install TimeVault globally on your system with a single command:
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Abdelrhmansersawy/TimeVault/main/install.sh | bash
 ```
 *This downloads the application to `~/.timevault` and creates a symlink in `~/.local/bin` so you can use the `timevault` command everywhere.*
+*(Note: Windows users should use Windows Subsystem for Linux (WSL) to use the bash script).*
 
 ### Manual Install
 1. Clone the repository:
