@@ -47,6 +47,14 @@ const App = {
             this.navigateTo(this.previousSection || 'timelog');
         });
 
+        // JSON Data Export
+        document.getElementById('export-json-btn')?.addEventListener('click', () => {
+            if (typeof StorageManager !== 'undefined' && StorageManager.exportToJSON) {
+                StorageManager.exportToJSON();
+                App.showToast("Data backup saved as JSON!");
+            }
+        });
+
         // Schedule midnight check
         TimeTracker.scheduleMidnightCheck();
 
