@@ -359,10 +359,20 @@ const AdvancedStopwatchesModule = {
                     <div class="waste-time-display" data-display="${sw.id}">
                         ${formatTime(elapsedMs)}
                     </div>
-                    <div class="waste-time-label">
-                        Time wasted today
+                    <div class="waste-time-label" style="text-transform: capitalize; font-size: 0.9rem; opacity: 0.7; margin-top: 4px;">
+                        Total ${sw.name}
                     </div>
                 </div>
+
+                ${sw.id !== 'tracked-time' ? `
+                <div class="stopwatch-card-controls" style="margin-top: var(--spacing-md); justify-content: center;">
+                    ${sw.isRunning ? `
+                        <button class="btn btn-secondary btn-large" data-stop="${sw.id}" style="width: 100%; max-width: 150px;">Stop</button>
+                    ` : `
+                        <button class="btn btn-primary btn-large" data-start="${sw.id}" style="width: 100%; max-width: 150px;">Start</button>
+                    `}
+                </div>
+                ` : ''}
             </div>
         `;
     },
