@@ -114,6 +114,43 @@
     color: var(--color-text-secondary);
 }
 
+/* World Clock Card */
+.world-clock-card {
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    padding: var(--spacing-lg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    transition: all var(--transition-base);
+}
+
+.world-clock-card:hover {
+    border-color: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
+
+.world-clock-delete {
+    position: absolute;
+    top: var(--spacing-sm);
+    right: var(--spacing-sm);
+    background: transparent;
+    border: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    padding: var(--spacing-xs);
+    border-radius: var(--radius-md);
+    transition: all var(--transition-base);
+}
+
+.world-clock-delete:hover {
+    color: var(--color-danger);
+    background: var(--color-danger-light);
+}
+
 /* Alarm Card */
 .alarm-card {
     display: flex;
@@ -1274,23 +1311,27 @@
     grid-column: 1 / -1;
     margin-top: var(--spacing-xl);
 }
+
 .prod-stats {
     display: flex;
     gap: var(--spacing-lg);
     margin-bottom: var(--spacing-lg);
     flex-wrap: wrap;
 }
+
 .prod-stat {
     display: flex;
     flex-direction: column;
     align-items: center;
     min-width: 70px;
 }
+
 .prod-stat-val {
     font-size: var(--font-size-xl);
     font-weight: var(--font-weight-bold);
     color: var(--color-text-primary);
 }
+
 .prod-stat-lbl {
     font-size: var(--font-size-xs);
     color: var(--color-text-tertiary);
@@ -1298,12 +1339,14 @@
     letter-spacing: 0.05em;
     margin-top: 2px;
 }
+
 .prod-bar-chart {
     display: flex;
     gap: 2px;
     align-items: flex-end;
     padding: var(--spacing-sm) 0;
 }
+
 .prod-bar-col {
     flex: 1;
     display: flex;
@@ -1311,6 +1354,7 @@
     align-items: center;
     min-width: 0;
 }
+
 .prod-bar-stack {
     width: 100%;
     display: flex;
@@ -1318,15 +1362,18 @@
     border-radius: 2px;
     overflow: hidden;
 }
+
 .prod-bar-seg {
     min-height: 0;
     border-radius: 1px;
 }
+
 .prod-bar-label {
     font-size: 9px;
     color: var(--color-text-tertiary);
     margin-top: 4px;
 }
+
 .prod-legend {
     display: flex;
     gap: var(--spacing-md);
@@ -1335,6 +1382,7 @@
     font-size: var(--font-size-xs);
     color: var(--color-text-secondary);
 }
+
 .prod-legend-dot {
     display: inline-block;
     width: 8px;
@@ -1519,6 +1567,7 @@
     opacity: 0.5;
     transition: opacity 0.15s;
 }
+
 .board-col-menu:hover {
     opacity: 1;
     background: var(--color-bg-tertiary);
@@ -1538,10 +1587,12 @@
     transition: background 0.15s;
     margin-bottom: var(--spacing-sm);
 }
+
 .board-add-task:hover {
     background: var(--color-bg-tertiary);
     color: var(--color-text-primary);
 }
+
 .board-add-icon {
     font-size: 18px;
     font-weight: 700;
@@ -1564,6 +1615,7 @@
     cursor: pointer;
     transition: background 0.15s;
 }
+
 .board-task:hover {
     background: var(--color-bg-tertiary);
 }
@@ -1577,6 +1629,7 @@
     margin-top: 1px;
     color: var(--color-text-muted);
 }
+
 .board-task-check.checked {
     color: var(--color-success);
 }
@@ -1589,8 +1642,9 @@
     border: 2px solid;
     transition: background 0.15s;
 }
+
 .board-task-check:hover .board-task-circle {
-    background: rgba(255,255,255,0.08);
+    background: rgba(255, 255, 255, 0.08);
 }
 
 .board-task-body {
@@ -1610,9 +1664,18 @@
     border-radius: 50%;
     flex-shrink: 0;
 }
-.board-task-priority--high { background: var(--color-danger); }
-.board-task-priority--medium { background: var(--color-warning); }
-.board-task-priority--low { background: var(--color-success); }
+
+.board-task-priority--high {
+    background: var(--color-danger);
+}
+
+.board-task-priority--medium {
+    background: var(--color-warning);
+}
+
+.board-task-priority--low {
+    background: var(--color-success);
+}
 
 .board-task-title {
     font-size: var(--font-size-sm);
@@ -1621,6 +1684,7 @@
     line-height: 1.4;
     word-break: break-word;
 }
+
 .board-task-title.struck {
     text-decoration: line-through;
     color: var(--color-text-muted);
@@ -1670,12 +1734,15 @@
     margin-top: var(--spacing-sm);
     user-select: none;
 }
+
 .board-completed-toggle:hover {
     color: var(--color-text-primary);
 }
+
 .board-completed-toggle svg {
     transition: transform 0.2s;
 }
+
 .board-completed-toggle svg.rotated {
     transform: rotate(180deg);
 }
@@ -1685,6 +1752,7 @@
     flex-direction: column;
     gap: 2px;
 }
+
 .board-completed-list.collapsed {
     display: none;
 }
@@ -1700,6 +1768,7 @@
     font-size: var(--font-size-sm);
     text-align: center;
 }
+
 .board-col-empty-hint {
     font-size: 12px;
     opacity: 0.6;
@@ -1710,6 +1779,7 @@
     opacity: 0.4;
     transform: scale(0.95);
 }
+
 .board-col-tasks.drag-over {
     background: var(--color-bg-card-hover);
     outline: 2px dashed var(--color-accent);
@@ -1717,17 +1787,21 @@
     border-radius: var(--radius-md);
     min-height: 40px;
 }
+
 .board-col.col-dragging {
     opacity: 0.4;
 }
+
 .board-col.col-drop-target {
     outline: 2px dashed var(--color-accent);
     outline-offset: -2px;
     border-radius: var(--radius-lg);
 }
+
 .board-col-header[data-col-drag-handle] {
     cursor: grab;
 }
+
 .board-col-header[data-col-drag-handle]:active {
     cursor: grabbing;
 }
@@ -1770,10 +1844,12 @@
     cursor: pointer;
     transition: all 0.15s;
 }
+
 .tag-chip:hover {
     border-color: var(--color-accent);
     color: var(--color-text-primary);
 }
+
 .tag-chip--active {
     background: var(--color-accent);
     color: #fff;
@@ -1784,6 +1860,7 @@
     display: flex;
     gap: var(--spacing-xs);
 }
+
 .tag-picker-input-row .form-input {
     flex: 1;
     padding: var(--spacing-xs) var(--spacing-sm);
@@ -1805,6 +1882,7 @@
         flex-direction: column;
         overflow-x: visible;
     }
+
     .board-col {
         flex: none;
         max-width: none;
@@ -1969,6 +2047,7 @@
     font-weight: var(--font-weight-medium);
     transition: background 0.15s;
 }
+
 .daily-card-action:hover {
     background: var(--color-bg-tertiary);
 }
@@ -2295,14 +2374,82 @@
     padding: var(--spacing-lg);
 }
 
-/* Active timer display */
 .time-log-active {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
     background: rgba(99, 102, 241, 0.08);
     border: 1px solid rgba(99, 102, 241, 0.25);
     border-radius: var(--radius-lg);
     padding: var(--spacing-lg);
     margin-bottom: var(--spacing-md);
     animation: timerPulse 2s ease-in-out infinite;
+}
+
+/* ============================================
+   Daily Timeline (Gantt style)
+   ============================================ */
+.daily-timeline-container {
+    margin-top: var(--spacing-xl);
+    padding: var(--spacing-lg) 0;
+    position: relative;
+    width: 100%;
+}
+
+.timeline-track {
+    position: relative;
+    height: 12px;
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-full);
+    margin-bottom: var(--spacing-xs);
+    overflow: hidden;
+}
+
+.timeline-block {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    border-radius: var(--radius-sm);
+    min-width: 2px;
+    background: var(--color-accent);
+    opacity: 0.8;
+    transition: width var(--transition-base), left var(--transition-base), background-color var(--transition-base);
+    cursor: pointer;
+}
+
+.timeline-block:hover {
+    opacity: 1;
+    filter: brightness(1.2);
+    z-index: 2;
+}
+
+.timeline-block.is-break {
+    background: var(--color-danger);
+    opacity: 0.6;
+}
+
+.timeline-block.is-break:hover {
+    opacity: 0.9;
+}
+
+.timeline-labels {
+    display: flex;
+    justify-content: space-between;
+    padding: 0 4px;
+    font-size: 10px;
+    color: var(--color-text-muted);
+}
+
+.timeline-cursor {
+    position: absolute;
+    top: -4px;
+    bottom: -4px;
+    width: 2px;
+    background-color: var(--color-accent);
+    z-index: 10;
+    pointer-events: none;
+    box-shadow: 0 0 4px var(--color-accent);
+    opacity: 0.8;
 }
 
 .time-log-active.is-break {
@@ -2572,31 +2719,57 @@
     border-radius: 50%;
     flex-shrink: 0;
 }
-.tl-entry-priority--high { background: var(--color-danger); }
-.tl-entry-priority--medium { background: var(--color-warning); }
-.tl-entry-priority--low { background: var(--color-success); }
 
-/* Delete button */
-.time-log-entry-delete {
+.tl-entry-priority--high {
+    background: var(--color-danger);
+}
+
+.tl-entry-priority--medium {
+    background: var(--color-warning);
+}
+
+.tl-entry-priority--low {
+    background: var(--color-success);
+}
+
+/* Action buttons */
+.time-log-entry-actions {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
+    right: 8px;
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: all var(--transition-fast);
+}
+
+.time-log-entry:hover .time-log-entry-actions {
+    opacity: 1;
+}
+
+.time-log-entry-edit,
+.time-log-entry-delete {
     background: transparent;
     border: none;
     color: var(--color-text-muted);
     cursor: pointer;
-    opacity: 0;
-    transition: all var(--transition-fast);
     padding: 4px;
-    right: 8px;
+    transition: all var(--transition-fast);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
 }
 
-.time-log-entry:hover .time-log-entry-delete {
-    opacity: 1;
+.time-log-entry-edit:hover {
+    color: var(--color-accent);
+    background: rgba(99, 102, 241, 0.1);
 }
 
 .time-log-entry-delete:hover {
-    color: #f38ba8;
+    color: var(--color-danger);
+    background: rgba(243, 139, 168, 0.1);
 }
 
 .time-log-empty {
@@ -2830,9 +3003,12 @@
 }
 
 @keyframes exceededPulse {
-    0%, 100% {
+
+    0%,
+    100% {
         box-shadow: 0 0 0 0 rgba(243, 139, 168, 0);
     }
+
     50% {
         box-shadow: 0 0 20px 4px rgba(243, 139, 168, 0.2);
     }
@@ -2932,6 +3108,7 @@ body.light-theme .stopwatch-card.session-exceeded {
     margin-bottom: 8px;
     margin-top: 12px;
 }
+
 .theme-group-label:first-child {
     margin-top: 0;
 }
@@ -2955,9 +3132,11 @@ body.light-theme .stopwatch-card.session-exceeded {
     cursor: pointer;
     transition: border-color 0.15s, box-shadow 0.15s;
 }
+
 .theme-card:hover {
     border-color: var(--color-text-muted);
 }
+
 .theme-card.active {
     border-color: var(--color-accent);
     box-shadow: 0 0 0 1px var(--color-accent);
@@ -2989,6 +3168,7 @@ body.light-theme .stopwatch-card.session-exceeded {
     border-radius: 2px;
     width: 70%;
 }
+
 .theme-card-line.short {
     width: 40%;
 }
@@ -3004,6 +3184,7 @@ body.light-theme .stopwatch-card.session-exceeded {
     font-size: 11px;
     font-weight: 600;
 }
+
 .theme-card-delete {
     position: absolute;
     top: 2px;
@@ -3016,15 +3197,19 @@ body.light-theme .stopwatch-card.session-exceeded {
     transition: opacity 0.15s;
     z-index: 2;
 }
+
 .theme-card {
     position: relative;
 }
+
 .theme-card:hover .theme-card-delete {
     opacity: 1;
 }
+
 .theme-card-delete:hover {
     color: var(--color-danger);
 }
+
 .customizer-actions {
     display: flex;
     gap: 8px;
@@ -3044,6 +3229,7 @@ body.light-theme .stopwatch-card.session-exceeded {
     user-select: none;
     outline: none;
 }
+
 .theme-customize-details summary:hover {
     color: var(--color-text-secondary);
 }
@@ -3063,11 +3249,13 @@ body.light-theme .stopwatch-card.session-exceeded {
     flex-direction: column;
     gap: 4px;
 }
+
 .customizer-field label {
     font-size: 11px;
     color: var(--color-text-muted);
     font-weight: 500;
 }
+
 .customizer-field input[type="color"] {
     width: 100%;
     height: 32px;
@@ -3077,9 +3265,11 @@ body.light-theme .stopwatch-card.session-exceeded {
     cursor: pointer;
     padding: 2px;
 }
+
 .customizer-field input[type="color"]::-webkit-color-swatch-wrapper {
     padding: 2px;
 }
+
 .customizer-field input[type="color"]::-webkit-color-swatch {
     border: none;
     border-radius: 4px;
@@ -3239,6 +3429,7 @@ body.light-theme .stopwatch-card.session-exceeded {
     color: var(--color-text-muted);
     text-align: center;
 }
+
 .habits-empty-hint {
     font-size: var(--font-size-xs);
     color: var(--color-text-muted);
@@ -3278,15 +3469,18 @@ body.light-theme .stopwatch-card.session-exceeded {
     font-size: 10px;
     color: var(--color-text-muted);
 }
+
 .habits-date-header.today {
     color: var(--color-accent);
     font-weight: var(--font-weight-semibold);
 }
+
 .habits-date-day {
     font-size: 9px;
     text-transform: uppercase;
     letter-spacing: 0.04em;
 }
+
 .habits-date-num {
     font-size: 12px;
     font-weight: var(--font-weight-medium);
@@ -3311,6 +3505,7 @@ body.light-theme .stopwatch-card.session-exceeded {
     border-bottom: 1px solid var(--color-border);
     transition: background 0.15s;
 }
+
 .habit-row:hover {
     background: var(--color-bg-card-hover);
 }
@@ -3324,12 +3519,14 @@ body.light-theme .stopwatch-card.session-exceeded {
     cursor: pointer;
     min-width: 0;
 }
+
 .habit-color-dot {
     width: 10px;
     height: 10px;
     border-radius: 50%;
     flex-shrink: 0;
 }
+
 .habit-name {
     font-size: var(--font-size-sm);
     color: var(--color-text-primary);
@@ -3359,12 +3556,15 @@ body.light-theme .stopwatch-card.session-exceeded {
     transition: background 0.15s;
     color: var(--habit-color, var(--color-accent));
 }
+
 .habit-check-btn:hover {
     background: var(--color-bg-tertiary);
 }
+
 .habit-check-btn.checked {
     color: var(--habit-color, var(--color-success));
 }
+
 .habit-check-btn.checked svg {
     filter: drop-shadow(0 0 3px currentColor);
 }
@@ -3377,6 +3577,7 @@ body.light-theme .stopwatch-card.session-exceeded {
     background: transparent;
     transition: border-color 0.15s;
 }
+
 .habit-check-btn:hover .habit-empty-dot {
     border-color: var(--habit-color, var(--color-accent));
 }
@@ -3388,12 +3589,14 @@ body.light-theme .stopwatch-card.session-exceeded {
     justify-content: center;
     gap: 2px;
 }
+
 .habit-streak-num {
     font-size: var(--font-size-sm);
     font-weight: var(--font-weight-semibold);
     color: var(--color-text-primary);
     font-family: var(--font-mono);
 }
+
 .habit-streak-fire {
     font-size: 14px;
 }
@@ -3406,14 +3609,17 @@ body.light-theme .stopwatch-card.session-exceeded {
     gap: var(--spacing-md);
     flex-wrap: wrap;
 }
+
 .vault-status {
     font-size: var(--font-size-sm);
     color: var(--color-text-muted);
     font-family: var(--font-mono);
 }
+
 .vault-status.connected {
     color: var(--color-success);
 }
+
 .vault-actions {
     display: flex;
     gap: var(--spacing-xs);

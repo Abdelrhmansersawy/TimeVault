@@ -9,6 +9,12 @@ const App = {
     init() {
         console.log('Time Vault initializing...');
 
+        // Load settings first so modules have correct state
+        this.setupPanelWidth();
+        this.setupTimeDateSettings();
+        this.setupMaxSession();
+        this.setupTabVisibility();
+
         // Initialize account creation date (for graph boundaries)
         StorageManager.initAccountCreatedAt();
 
@@ -71,11 +77,11 @@ const App = {
             ShortcutsModule.resetToDefaults();
         });
 
-        // Panel width slider
-        this.setupPanelWidth();
+        // Panel width slider initialized above
 
-        // Max session duration warning
-        this.setupMaxSession();
+        // Day start setting initialized above
+
+        // Max session duration warning initialized above
 
         // Notification permission (once per session)
         this.setupNotificationPrompt();
@@ -116,6 +122,37 @@ const App = {
         } else if (section === 'habits') {
             HabitsModule.render();
         }
+    },
+
+    setupTabVisibility() {
+        const tabs = ['calendar', 'clock', 'stopwatches', 'habits', 'graphs'];
+
+        tabs.forEach(tab => {
+            const toggle = document.getElementById(`toggle-tab-${tab}`);
+            const navItem = document.querySelector(`.nav-tab[data-section="${tab}"]`);
+
+            if (toggle && navItem) {
+                // Read saved state or default to true
+                let isVisible = localStorage.getItem(`tabVisible_${tab}`);
+                isVisible = isVisible === null ? true : isVisible === 'true';
+
+                // Set initial UI state
+                toggle.checked = isVisible;
+                navItem.style.display = isVisible ? 'flex' : 'none';
+
+                // Listen for changes
+                toggle.addEventListener('change', (e) => {
+                    const checked = e.target.checked;
+                    localStorage.setItem(`tabVisible_${tab}`, checked);
+                    navItem.style.display = checked ? 'flex' : 'none';
+
+                    // If hiding the currently active tab, route back to timelog
+                    if (!checked && this.currentSection === tab) {
+                        this.navigateTo('timelog');
+                    }
+                });
+            }
+        });
     },
 
     showToast(message, duration = 3000) {
@@ -204,6 +241,36 @@ const App = {
 
     applyPanelWidth(px) {
         document.documentElement.style.setProperty('--layout-max-width', `${px}px`);
+    },
+
+    setupTimeDateSettings() {
+        const input = document.getElementById('day-start-hour');
+
+        let saved = localStorage.getItem('dayStartHour');
+        if (!saved) saved = '0';
+
+        this.dayStartHour = parseInt(saved, 10);
+
+        if (input) {
+            input.value = this.dayStartHour;
+            input.addEventListener('input', () => {
+                let val = parseInt(input.value, 10);
+                if (isNaN(val) || val < 0) val = 0;
+                if (val > 23) val = 23;
+                input.value = val;
+
+                this.dayStartHour = val;
+                localStorage.setItem('dayStartHour', val.toString());
+
+                // Trigger re-render of dailys if available
+                if (typeof DailysModule !== 'undefined') {
+                    DailysModule.render();
+                    if (DailysModule.currentSection === 'time-log') {
+                        DailysModule.renderTimeLogPage();
+                    }
+                }
+            });
+        }
     },
 
     setupMaxSession() {

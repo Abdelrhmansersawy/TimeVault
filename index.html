@@ -44,6 +44,14 @@
                     </svg>
                     <span class="tab-text">Focus</span>
                 </button>
+                <button class="nav-tab" data-section="clock">
+                    <svg class="tab-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    <span class="tab-text">Clock</span>
+                </button>
                 <button class="nav-tab" data-section="tasks">
                     <svg class="tab-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -63,8 +71,8 @@
                 <button class="nav-tab" data-section="habits">
                     <svg class="tab-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                        <polyline points="22 4 12 14.01 9 11.01"/>
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                        <polyline points="22 4 12 14.01 9 11.01" />
                     </svg>
                     <span class="tab-text">Habits</span>
                 </button>
@@ -101,10 +109,10 @@
         <!-- Notification Permission Banner -->
         <div id="notification-prompt" class="notification-prompt" style="display:none">
             <div class="notification-prompt-body">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                 </svg>
                 <span>Enable notifications for session warnings &amp; alarm alerts</span>
             </div>
@@ -118,106 +126,328 @@
         <main class="main-content">
             <!-- Clock Section -->
             <section id="clock-section" class="section">
-                <div class="clock-container">
-                    <div class="clock-display">
-                        <div class="time-display">
-                            <span id="clock-hours">00</span>
-                            <span class="time-separator">:</span>
-                            <span id="clock-minutes">00</span>
-                            <span class="time-separator">:</span>
-                            <span id="clock-seconds">00</span>
-                            <span id="clock-ampm" class="ampm"></span>
-                        </div>
-                        <div class="date-display" id="clock-date">Monday, January 13, 2026</div>
-                    </div>
-                    <div class="clock-controls">
-                        <button id="toggle-format" class="btn btn-secondary">
-                            <span id="format-text">12H</span>
-                        </button>
-                    </div>
-                </div>
-            </section>
+                <style>
+                    .clock-grid {
+                        display: grid;
+                        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+                        gap: var(--spacing-lg);
+                        padding-bottom: var(--spacing-xl);
+                    }
 
-            <!-- Alarm Section -->
-            <section id="alarm-section" class="section">
-                <div class="section-header">
-                    <h2>Alarms</h2>
-                    <button id="add-alarm-btn" class="btn btn-primary">
-                        <span>+ Add Alarm</span>
-                    </button>
-                </div>
-                <div id="alarms-list" class="items-list">
-                    <!-- Alarms will be rendered here -->
-                </div>
-                <div id="no-alarms" class="empty-state">
-                    <svg class="empty-icon" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                    </svg>
-                    <p>No alarms set</p>
-                    <p class="empty-hint">Click "Add Alarm" to create one</p>
-                </div>
-            </section>
+                    .world-clocks-header {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        margin-top: var(--spacing-lg);
+                        margin-bottom: var(--spacing-md);
+                        width: 100%;
+                    }
 
-            <!-- Timer Section -->
-            <section id="timer-section" class="section">
-                <div class="timer-container">
-                    <div class="timer-display">
-                        <div class="timer-input-group" id="timer-input-mode">
-                            <input type="number" id="timer-hours" class="timer-input" min="0" max="99" value="0"
-                                placeholder="00">
-                            <span class="timer-label">h</span>
-                            <input type="number" id="timer-minutes" class="timer-input" min="0" max="59" value="5"
-                                placeholder="00">
-                            <span class="timer-label">m</span>
-                            <input type="number" id="timer-seconds" class="timer-input" min="0" max="59" value="0"
-                                placeholder="00">
-                            <span class="timer-label">s</span>
-                        </div>
-                        <div class="timer-countdown" id="timer-countdown-mode" style="display: none;">
-                            <span id="timer-display-hours">00</span>
-                            <span class="time-separator">:</span>
-                            <span id="timer-display-minutes">05</span>
-                            <span class="time-separator">:</span>
-                            <span id="timer-display-seconds">00</span>
-                        </div>
-                        <div class="timer-progress-ring" id="timer-progress-container">
-                            <svg class="progress-ring" width="200" height="200">
-                                <circle class="progress-ring-bg" cx="100" cy="100" r="90" />
-                                <circle id="timer-progress" class="progress-ring-fill" cx="100" cy="100" r="90" />
-                            </svg>
-                        </div>
-                    </div>
-                    <div class="timer-controls">
-                        <button id="timer-start" class="btn btn-primary btn-large">Start</button>
-                        <button id="timer-pause" class="btn btn-secondary btn-large"
-                            style="display: none;">Pause</button>
-                        <button id="timer-reset" class="btn btn-ghost btn-large">Reset</button>
-                    </div>
-                </div>
-            </section>
+                    /* Premium Clock Tab Layout */
+                    .clock-dashboard {
+                        display: flex;
+                        flex-direction: column;
+                        gap: var(--spacing-3xl);
+                        width: 100%;
+                        padding: var(--spacing-xl) 0;
+                    }
 
-            <!-- Basic Stopwatch Section -->
-            <section id="stopwatch-section" class="section">
-                <div class="stopwatch-container">
-                    <div class="stopwatch-display">
-                        <span id="sw-hours">00</span>
-                        <span class="time-separator">:</span>
-                        <span id="sw-minutes">00</span>
-                        <span class="time-separator">:</span>
-                        <span id="sw-seconds">00</span>
-                        <span class="time-separator">.</span>
-                        <span id="sw-ms" class="milliseconds">00</span>
-                    </div>
-                    <div class="stopwatch-controls">
-                        <button id="sw-start" class="btn btn-primary btn-large">Start</button>
-                        <button id="sw-pause" class="btn btn-secondary btn-large" style="display: none;">Pause</button>
-                        <button id="sw-lap" class="btn btn-secondary btn-large" disabled>Lap</button>
-                        <button id="sw-reset" class="btn btn-ghost btn-large">Reset</button>
-                    </div>
-                    <div id="sw-laps" class="laps-list">
-                        <!-- Laps will be rendered here -->
+                    .clock-top-row {
+                        display: flex;
+                        flex-direction: column;
+                        gap: var(--spacing-2xl);
+                        width: 100%;
+                        max-width: 800px;
+                        margin: 0 auto;
+                    }
+
+                    .clock-widget {
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        text-align: center;
+                        background: transparent;
+                        border: none;
+                        box-shadow: none;
+                        padding: 0;
+                    }
+
+                    .clock-widget-title {
+                        font-size: var(--font-size-md);
+                        font-weight: var(--font-weight-bold);
+                        color: var(--color-text-primary);
+                        text-transform: uppercase;
+                        letter-spacing: 1.5px;
+                        margin-bottom: var(--spacing-xl);
+                        opacity: 0.9;
+                    }
+
+                    /* Typography for main numbers */
+                    .premium-time-display {
+                        font-size: 5.5rem;
+                        font-weight: 300;
+                        line-height: 1;
+                        letter-spacing: -2px;
+                        color: var(--color-text-primary);
+                        display: flex;
+                        align-items: baseline;
+                        justify-content: center;
+                        font-family: 'Inter', -apple-system, sans-serif;
+                    }
+
+                    /* Specific adjustment for input fields to match static text */
+                    .premium-time-display input.timer-input {
+                        font-size: inherit;
+                        font-weight: inherit;
+                        font-family: inherit;
+                        color: var(--color-text-primary);
+                        background: transparent;
+                        border: none;
+                        border-bottom: 2px solid transparent;
+                        text-align: center;
+                        width: 1.3em;
+                        padding: 0;
+                        transition: border-color 0.2s;
+                    }
+
+                    .premium-time-display input.timer-input:focus {
+                        outline: none;
+                        border-bottom-color: var(--color-accent);
+                    }
+
+                    .premium-time-display input.timer-input::placeholder {
+                        color: var(--color-text-muted);
+                        opacity: 0.3;
+                    }
+
+                    .premium-separator {
+                        opacity: 0.4;
+                        font-weight: 200;
+                        margin: 0 4px;
+                        position: relative;
+                        top: -4px;
+                    }
+
+                    .premium-small-text {
+                        font-size: 1.25rem;
+                        font-weight: 400;
+                        color: var(--color-text-secondary);
+                        margin-left: var(--spacing-sm);
+                        letter-spacing: normal;
+                    }
+
+                    .clock-controls-row {
+                        margin-top: var(--spacing-xl);
+                        display: flex;
+                        gap: var(--spacing-md);
+                        justify-content: center;
+                        height: 48px;
+                        /* Fixed height to prevent jumping */
+                        align-items: center;
+                    }
+
+                    /* World Clocks Section */
+                    .world-clocks-section {
+                        margin-top: var(--spacing-2xl);
+                        border-top: 1px solid var(--color-border);
+                        padding-top: var(--spacing-2xl);
+                    }
+
+                    .world-clocks-header {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        margin-bottom: var(--spacing-xl);
+                    }
+
+                    .world-clocks-header h3 {
+                        font-size: var(--font-size-xl);
+                        font-weight: var(--font-weight-semibold);
+                        color: var(--color-text-primary);
+                        margin: 0;
+                    }
+
+                    .world-clocks-grid {
+                        display: grid;
+                        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+                        gap: var(--spacing-lg);
+                    }
+
+                    .world-clock-card {
+                        background: var(--color-surface);
+                        border: 1px solid var(--color-border);
+                        border-radius: var(--radius-xl);
+                        padding: var(--spacing-xl);
+                        display: flex;
+                        flex-direction: column;
+                        align-items: flex-start;
+                        position: relative;
+                        transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+                    }
+
+                    .world-clock-card:hover {
+                        transform: translateY(-2px);
+                        box-shadow: var(--shadow-md);
+                        border-color: rgba(255, 255, 255, 0.1);
+                    }
+
+                    .world-clock-delete {
+                        position: absolute;
+                        top: var(--spacing-md);
+                        right: var(--spacing-md);
+                        background: none;
+                        border: none;
+                        color: var(--color-text-muted);
+                        cursor: pointer;
+                        padding: 4px;
+                        border-radius: var(--radius-sm);
+                        opacity: 0;
+                        transition: all 0.2s;
+                    }
+
+                    .world-clock-card:hover .world-clock-delete {
+                        opacity: 1;
+                    }
+
+                    .world-clock-delete:hover {
+                        color: var(--color-danger);
+                        background-color: var(--color-danger-light);
+                    }
+                </style>
+                <div class="clock-dashboard">
+                    <div class="clock-top-row">
+
+                        <!-- 1. Local Clock widget -->
+                        <div class="clock-widget">
+                            <h3 class="clock-widget-title" style="font-size: 1.5rem;">Local Time</h3>
+                            <div class="premium-time-display" style="font-size: 8rem; margin: var(--spacing-xl) 0;">
+                                <span id="clock-hours">00</span>
+                                <span class="premium-separator">:</span>
+                                <span id="clock-minutes">00</span>
+                                <span class="premium-separator">:</span>
+                                <span id="clock-seconds">00</span>
+                                <span id="clock-ampm" class="ampm premium-small-text"
+                                    style="font-size: 2rem; font-weight: 500;"></span>
+                            </div>
+                            <div id="clock-date"
+                                style="color: var(--color-text-secondary); margin-top: var(--spacing-sm); font-size: 1.5rem;">
+                                Monday, January 13, 2026</div>
+
+                            <div class="clock-controls-row">
+                                <button id="toggle-format" class="btn btn-secondary btn-sm"
+                                    style="border-radius: var(--radius-full); padding: 4px 12px; font-size: 0.85rem; background: var(--color-surface);">
+                                    <span id="format-text">12H</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 2. World Clocks Section -->
+                        <div class="world-clocks-section"
+                            style="margin-top: var(--spacing-4xl); border-top: none; padding-top: 0;">
+                            <div class="world-clocks-header">
+                                <h3 class="clock-widget-title" style="margin-bottom: 0;">World Clocks</h3>
+                                <button id="add-world-clock-btn" class="btn btn-secondary btn-sm"
+                                    style="border-radius: var(--radius-full); font-size: 0.85rem; background: var(--color-surface);">
+                                    + Add Clock
+                                </button>
+                            </div>
+                            <div id="world-clocks-list" class="world-clocks-grid"
+                                style="grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));">
+                                <!-- Clocks rendered by JS -->
+                            </div>
+                        </div>
+
+                        <hr
+                            style="border: 0; border-top: 1px solid var(--color-border); margin: var(--spacing-3xl) 0; opacity: 0.5;">
+
+                        <!-- 3. Basic Stopwatch widget -->
+                        <div class="clock-widget">
+                            <h3 class="clock-widget-title">Stopwatch</h3>
+                            <div class="premium-time-display" style="font-size: 6rem;">
+                                <span id="sw-hours">00</span>
+                                <span class="premium-separator">:</span>
+                                <span id="sw-minutes">00</span>
+                                <span class="premium-separator">:</span>
+                                <span id="sw-seconds">00</span>
+                                <span class="premium-small-text" style="font-size: 2rem; opacity: 0.6;">.<span
+                                        id="sw-ms">00</span></span>
+                            </div>
+
+                            <div class="clock-controls-row">
+                                <button id="sw-start" class="btn btn-primary"
+                                    style="background: var(--color-accent-purple); border-radius: var(--radius-lg); padding: 12px 48px; font-size: 1.2rem;">Start</button>
+                                <button id="sw-pause" class="btn btn-secondary"
+                                    style="display: none; border-radius: var(--radius-lg); padding: 12px 48px; font-size: 1.2rem;">Pause</button>
+                                <button id="sw-lap" class="btn btn-secondary" disabled
+                                    style="border-radius: var(--radius-lg); padding: 12px 32px; font-size: 1.2rem; background: var(--color-surface); border-color: transparent;">Lap</button>
+                                <button id="sw-reset" class="btn btn-ghost"
+                                    style="padding: 12px 24px; font-size: 1.2rem;">Reset</button>
+                            </div>
+
+                            <div id="sw-laps" class="laps-list"
+                                style="margin-top: var(--spacing-xl); max-height: 200px; overflow-y: auto; width: 100%; text-align: left; scrollbar-width: none; background: var(--color-surface); border-radius: var(--radius-md); padding: var(--spacing-md);">
+                                <!-- Laps will be rendered here -->
+                            </div>
+                        </div>
+
+                        <hr
+                            style="border: 0; border-top: 1px solid var(--color-border); margin: var(--spacing-3xl) 0; opacity: 0.5;">
+
+                        <!-- 4. Timer widget -->
+                        <div class="clock-widget" style="margin-bottom: var(--spacing-4xl);">
+                            <h3 class="clock-widget-title">Timer</h3>
+
+                            <!-- Input Mode -->
+                            <div class="premium-time-display" id="timer-input-mode" style="font-size: 6rem;">
+                                <input type="number" id="timer-hours" class="timer-input" min="0" max="99" value="0"
+                                    placeholder="00">
+                                <span class="premium-small-text"
+                                    style="align-self: flex-end; margin-bottom: 24px; font-size: 2rem; opacity: 0.5;">h</span>
+
+                                <input type="number" id="timer-minutes" class="timer-input" min="0" max="59" value="5"
+                                    placeholder="00">
+                                <span class="premium-small-text"
+                                    style="align-self: flex-end; margin-bottom: 24px; font-size: 2rem; opacity: 0.5;">m</span>
+
+                                <input type="number" id="timer-seconds" class="timer-input" min="0" max="59" value="0"
+                                    placeholder="00">
+                                <span class="premium-small-text"
+                                    style="align-self: flex-end; margin-bottom: 24px; font-size: 2rem; opacity: 0.5;">s</span>
+                            </div>
+
+                            <!-- Countdown Mode -->
+                            <div class="premium-time-display" id="timer-countdown-mode"
+                                style="display: none; position: relative; font-size: 6rem;">
+                                <span id="timer-display-hours">00</span>
+                                <span class="premium-separator">:</span>
+                                <span id="timer-display-minutes">05</span>
+                                <span class="premium-separator">:</span>
+                                <span id="timer-display-seconds">00</span>
+
+                                <!-- Progress Ring overlay -->
+                                <div id="timer-progress-container"
+                                    style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: none; pointer-events: none; z-index: -1; opacity: 0.15;">
+                                    <svg class="progress-ring" width="280" height="280"
+                                        style="transform: rotate(-90deg);">
+                                        <circle class="progress-ring-bg" cx="140" cy="140" r="130"
+                                            stroke="var(--color-border)" stroke-width="4" fill="none" />
+                                        <circle id="timer-progress" class="progress-ring-fill" cx="140" cy="140" r="130"
+                                            stroke="var(--color-accent)" stroke-width="6" fill="none"
+                                            stroke-linecap="round" style="transition: stroke-dashoffset 0.1s linear;" />
+                                    </svg>
+                                </div>
+                            </div>
+
+                            <div class="clock-controls-row">
+                                <button id="timer-start" class="btn btn-primary"
+                                    style="background: var(--color-accent-purple); border-radius: var(--radius-lg); padding: 12px 48px; font-size: 1.2rem;">Start</button>
+                                <button id="timer-pause" class="btn btn-secondary"
+                                    style="display: none; border-radius: var(--radius-lg); padding: 12px 48px; font-size: 1.2rem;">Pause</button>
+                                <button id="timer-reset" class="btn btn-ghost"
+                                    style="padding: 12px 24px; font-size: 1.2rem;">Reset</button>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </section>
@@ -323,6 +553,20 @@
                         </div>
                     </div>
 
+                    <!-- Daily Timeline -->
+                    <div id="daily-timeline-container" class="daily-timeline-container">
+                        <div class="timeline-track">
+                            <!-- Timeline blocks rendered by JS -->
+                        </div>
+                        <div class="timeline-labels">
+                            <span>12 AM</span>
+                            <span>6 AM</span>
+                            <span>12 PM</span>
+                            <span>6 PM</span>
+                            <span>11:59 PM</span>
+                        </div>
+                    </div>
+
                     <!-- Day Overview Stats -->
                     <div id="log-overview" class="log-overview">
                         <div class="log-stat">
@@ -336,6 +580,10 @@
                         <div class="log-stat">
                             <span class="log-stat-value stat-waste" id="stat-waste">0h 0m</span>
                             <span class="log-stat-label">Waste</span>
+                        </div>
+                        <div class="log-stat">
+                            <span class="log-stat-value stat-untracked" id="stat-untracked">0h 0m</span>
+                            <span class="log-stat-label">Untracked</span>
                         </div>
                         <div class="log-stat">
                             <span class="log-stat-value stat-done" id="stat-tasks-done">0</span>
@@ -365,13 +613,20 @@
                     <div class="daily-page-header">
                         <div class="daily-page-nav">
                             <button id="dailys-prev" class="btn btn-icon btn-ghost" title="Previous day">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <polyline points="15 18 9 12 15 6"></polyline>
+                                </svg>
                             </button>
                             <h2 id="dailys-date-display" class="daily-page-date">Today</h2>
                             <button id="dailys-next" class="btn btn-icon btn-ghost" title="Next day">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <polyline points="9 18 15 12 9 6"></polyline>
+                                </svg>
                             </button>
-                            <button id="dailys-today" class="btn btn-sm btn-secondary" style="margin-left: 8px;">Today</button>
+                            <button id="dailys-today" class="btn btn-sm btn-secondary"
+                                style="margin-left: 8px;">Today</button>
                         </div>
                     </div>
 
@@ -382,7 +637,16 @@
                             <div class="daily-card">
                                 <div class="daily-card-header">
                                     <div class="daily-card-icon" style="--card-accent: var(--color-warning)">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="5" />
+                                            <line x1="12" y1="1" x2="12" y2="3" />
+                                            <line x1="12" y1="21" x2="12" y2="23" />
+                                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                                            <line x1="1" y1="12" x2="3" y2="12" />
+                                            <line x1="21" y1="12" x2="23" y2="12" />
+                                        </svg>
                                     </div>
                                     <h3 class="daily-card-title">Morning Routine</h3>
                                     <button id="add-routine-btn" class="daily-card-action">+ Add</button>
@@ -394,7 +658,11 @@
                             <div class="daily-card">
                                 <div class="daily-card-header">
                                     <div class="daily-card-icon" style="--card-accent: var(--color-accent)">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2">
+                                            <path d="M9 11l3 3L22 4" />
+                                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                                        </svg>
                                     </div>
                                     <h3 class="daily-card-title">Plan for Today</h3>
                                     <button id="add-plan-btn" class="daily-card-action">+ Add</button>
@@ -406,7 +674,11 @@
                             <div class="daily-card daily-card--muted">
                                 <div class="daily-card-header">
                                     <div class="daily-card-icon" style="--card-accent: var(--color-success)">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2">
+                                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                                            <polyline points="22 4 12 14.01 9 11.01" />
+                                        </svg>
                                     </div>
                                     <h3 class="daily-card-title">Completed</h3>
                                 </div>
@@ -420,7 +692,11 @@
                             <div class="daily-card daily-card--journal">
                                 <div class="daily-card-header">
                                     <div class="daily-card-icon" style="--card-accent: var(--color-accent-light)">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2">
+                                            <path d="M12 20h9" />
+                                            <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                                        </svg>
                                     </div>
                                     <h3 class="daily-card-title">Reflection</h3>
                                 </div>
@@ -432,7 +708,11 @@
                             <div class="daily-card">
                                 <div class="daily-card-header">
                                     <div class="daily-card-icon" style="--card-accent: var(--color-danger)">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10" />
+                                            <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                                        </svg>
                                     </div>
                                     <h3 class="daily-card-title">Blockers</h3>
                                 </div>
@@ -444,7 +724,11 @@
                             <div class="daily-card">
                                 <div class="daily-card-header">
                                     <div class="daily-card-icon" style="--card-accent: var(--color-success)">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2">
+                                            <line x1="5" y1="12" x2="19" y2="12" />
+                                            <polyline points="12 5 19 12 12 19" />
+                                        </svg>
                                     </div>
                                     <h3 class="daily-card-title">Tomorrow</h3>
                                 </div>
@@ -532,8 +816,10 @@
             <section id="settings-section" class="section">
                 <div class="section-header">
                     <h2>Settings</h2>
-                    <button class="btn btn-icon btn-ghost settings-close" id="settings-close-btn" title="Close settings">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <button class="btn btn-icon btn-ghost settings-close" id="settings-close-btn"
+                        title="Close settings">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
                             <line x1="18" y1="6" x2="6" y2="18"></line>
                             <line x1="6" y1="6" x2="18" y2="18"></line>
                         </svg>
@@ -553,9 +839,62 @@
                         <div class="setting-row">
                             <span class="setting-label">Panel Width</span>
                             <div class="panel-width-control">
-                                <input type="range" id="panel-width-slider" min="700" max="1800" step="50" value="1400" class="panel-width-slider">
+                                <input type="range" id="panel-width-slider" min="700" max="1800" step="50" value="1400"
+                                    class="panel-width-slider">
                                 <span id="panel-width-value" class="panel-width-value">1400px</span>
                             </div>
+                        </div>
+                    </div>
+                    <div class="settings-group">
+                        <h3 class="settings-group-title">Time & Date</h3>
+                        <p class="settings-hint">Customize how days are tracked and displayed.</p>
+                        <div class="setting-row">
+                            <span class="setting-label">Day Starts At</span>
+                            <div class="panel-width-control">
+                                <input type="number" id="day-start-hour" min="0" max="23" value="0" class="form-input"
+                                    style="width: 70px; padding: 4px 8px;">
+                                <span class="panel-width-value">Hour (0-23)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-group">
+                        <h3 class="settings-group-title">Visible Tabs</h3>
+                        <p class="settings-hint">Choose which navigation tabs appear in the sidebar.</p>
+                        <div class="setting-row">
+                            <span class="setting-label">Calendar</span>
+                            <label class="toggle">
+                                <input type="checkbox" id="toggle-tab-calendar" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-row">
+                            <span class="setting-label">Clock</span>
+                            <label class="toggle">
+                                <input type="checkbox" id="toggle-tab-clock" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-row">
+                            <span class="setting-label">Advanced Stopwatches</span>
+                            <label class="toggle">
+                                <input type="checkbox" id="toggle-tab-stopwatches" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-row">
+                            <span class="setting-label">Habits</span>
+                            <label class="toggle">
+                                <input type="checkbox" id="toggle-tab-habits" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-row">
+                            <span class="setting-label">Graphs & Analysis</span>
+                            <label class="toggle">
+                                <input type="checkbox" id="toggle-tab-graphs" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
                         </div>
                     </div>
                     <div class="settings-group">
@@ -564,7 +903,8 @@
                         <div class="setting-row">
                             <span class="setting-label">Max Session Duration</span>
                             <div class="panel-width-control">
-                                <input type="range" id="max-session-slider" min="15" max="240" step="5" value="90" class="panel-width-slider">
+                                <input type="range" id="max-session-slider" min="15" max="240" step="5" value="90"
+                                    class="panel-width-slider">
                                 <span id="max-session-value" class="panel-width-value">1h 30m</span>
                             </div>
                         </div>
@@ -578,13 +918,17 @@
                     </div>
                     <div class="settings-group">
                         <h3 class="settings-group-title">Obsidian Vault Sync</h3>
-                        <p class="settings-hint">Export your time logs, tasks, and data as .md files into an Obsidian vault folder.</p>
+                        <p class="settings-hint">Export your time logs, tasks, and data as .md files into an Obsidian
+                            vault folder.</p>
                         <div class="vault-sync-row">
                             <span id="vault-status" class="vault-status">Not connected</span>
                             <div class="vault-actions">
-                                <button id="vault-pick-btn" class="btn btn-sm btn-secondary">Choose Vault Folder</button>
-                                <button id="vault-sync-btn" class="btn btn-sm btn-primary" style="display:none">Sync Now</button>
-                                <button id="vault-disconnect-btn" class="btn btn-sm btn-ghost" style="display:none">Disconnect</button>
+                                <button id="vault-pick-btn" class="btn btn-sm btn-secondary">Choose Vault
+                                    Folder</button>
+                                <button id="vault-sync-btn" class="btn btn-sm btn-primary" style="display:none">Sync
+                                    Now</button>
+                                <button id="vault-disconnect-btn" class="btn btn-sm btn-ghost"
+                                    style="display:none">Disconnect</button>
                             </div>
                         </div>
                     </div>
@@ -633,6 +977,57 @@
             <div class="modal-footer">
                 <button class="btn btn-ghost" data-close-modal>Cancel</button>
                 <button id="save-alarm-btn" class="btn btn-primary">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Time Log Edit Modal -->
+    <div id="timelog-edit-modal" class="modal">
+        <div class="modal-backdrop" data-close-modal></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="timelog-edit-modal-title">Edit Session</h3>
+                <button class="modal-close" data-close-modal>&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label" for="timelog-edit-time">End Time (HH:MM AM/PM)</label>
+                    <input type="time" id="timelog-edit-time" class="form-input" required>
+                    <small class="form-hint" style="display: block; margin-top: 8px;">Adjust the end time for this
+                        session.</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" data-close-modal>Cancel</button>
+                <button id="save-timelog-edit-btn" class="btn btn-primary">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for World Clock -->
+    <div id="world-clock-modal" class="modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="world-clock-modal-title">Add World Clock</h3>
+                <button class="modal-close" data-close-modal>&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="world-clock-name">Label</label>
+                    <input type="text" id="world-clock-name" class="form-input" placeholder="e.g. Cairo" required>
+                </div>
+                <div class="form-group">
+                    <label for="world-clock-offset">UTC Offset (Hours)</label>
+                    <input type="number" id="world-clock-offset" class="form-input" step="0.5"
+                        placeholder="e.g. 2 for +2H" required>
+                    <small class="form-hint" style="display: block; margin-top: 8px;">Use decimal values for half-hour
+                        timezones (e.g. 5.5 for India)</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" data-close-modal>Cancel</button>
+                <button id="save-world-clock-btn" class="btn btn-primary">Save</button>
             </div>
         </div>
     </div>
@@ -757,7 +1152,8 @@
                 </div>
                 <div class="form-group">
                     <label for="task-description">Description</label>
-                    <textarea id="task-description" class="form-input" rows="2" placeholder="Details (optional)"></textarea>
+                    <textarea id="task-description" class="form-input" rows="2"
+                        placeholder="Details (optional)"></textarea>
                 </div>
                 <div class="form-group">
                     <label>Tags</label>
@@ -803,12 +1199,18 @@
                     <div class="color-picker">
                         <input type="color" id="habit-color" value="#7f6df2">
                         <div class="color-presets">
-                            <button type="button" class="color-preset" data-color="#7f6df2" style="background:#7f6df2;"></button>
-                            <button type="button" class="color-preset" data-color="#4dba87" style="background:#4dba87;"></button>
-                            <button type="button" class="color-preset" data-color="#e05561" style="background:#e05561;"></button>
-                            <button type="button" class="color-preset" data-color="#e0a458" style="background:#e0a458;"></button>
-                            <button type="button" class="color-preset" data-color="#89b4fa" style="background:#89b4fa;"></button>
-                            <button type="button" class="color-preset" data-color="#ec4899" style="background:#ec4899;"></button>
+                            <button type="button" class="color-preset" data-color="#7f6df2"
+                                style="background:#7f6df2;"></button>
+                            <button type="button" class="color-preset" data-color="#4dba87"
+                                style="background:#4dba87;"></button>
+                            <button type="button" class="color-preset" data-color="#e05561"
+                                style="background:#e05561;"></button>
+                            <button type="button" class="color-preset" data-color="#e0a458"
+                                style="background:#e0a458;"></button>
+                            <button type="button" class="color-preset" data-color="#89b4fa"
+                                style="background:#89b4fa;"></button>
+                            <button type="button" class="color-preset" data-color="#ec4899"
+                                style="background:#ec4899;"></button>
                         </div>
                     </div>
                 </div>

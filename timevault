@@ -1,0 +1,200 @@
+#!/bin/bash
+
+# TimeVault Simple CLI
+
+DEFAULT_PORT=8080
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PORT_FILE="/tmp/timevault-port.txt"
+PID_FILE="/tmp/timevault-server.pid"
+
+# Helper to find an open port starting from DEFAULT_PORT
+get_open_port() {
+    local port=$DEFAULT_PORT
+    while (echo > /dev/tcp/localhost/$port) >/dev/null 2>&1; do
+        # Port is in use, increment
+        port=$((port + 1))
+        # Hard limit
+        if [ $port -gt 8100 ]; then
+            echo "Could not find an open port between 8080 and 8100."
+            exit 1
+        fi
+    done
+    echo $port
+}
+
+
+show_help() {
+    echo "TimeVault CLI"
+    echo "Usage: timevault [command]"
+    echo ""
+    echo "Commands:"
+    echo "  install   Install TimeVault to your PATH (creates a symlink in ~/.local/bin)"
+    echo "  uninstall Remove TimeVault symlink from your PATH"
+    echo "  open      Start the local development server and open TimeVault in your browser"
+    echo "  stop      Stop the local development server"
+    echo "  status    Check if the TimeVault server is currently running"
+    echo "  update    Pull the latest changes from git"
+    echo "  backup    Provides instructions on how to backup your TimeVault data"
+    echo "  --help    Show this help message"
+    echo ""
+    echo "TimeVault: https://github.com/Abdelrhmansersawy/TimeVault"
+    echo "Report bugs: https://github.com/Abdelrhmansersawy/TimeVault/issues"
+}
+
+install_app() {
+    echo "Installing TimeVault CLI..."
+    mkdir -p ~/.local/bin
+    
+    # Remove existing symlink if it exists
+    if [ -L ~/.local/bin/timevault ]; then
+        rm ~/.local/bin/timevault
+    fi
+    
+    ln -s "$DIR/timevault" ~/.local/bin/timevault
+    echo "Success! Linked timevault to ~/.local/bin/timevault."
+    echo "Make sure ~/.local/bin is in your PATH. You can now use the 'timevault' command from anywhere."
+}
+
+uninstall_app() {
+    echo "Uninstalling TimeVault CLI..."
+    if [ -L ~/.local/bin/timevault ]; then
+        rm ~/.local/bin/timevault
+        echo "Successfully removed symlink from ~/.local/bin/timevault."
+    else
+        echo "No symlink found at ~/.local/bin/timevault."
+    fi
+    echo ""
+    echo "Note: This only removed the CLI command."
+    echo "To completely remove TimeVault, delete the installation directory: $DIR"
+}
+
+update_app() {
+    echo "Updating TimeVault..."
+    cd "$DIR"
+    if git pull; then
+        echo "Successfully updated to the latest version."
+    else
+        echo "Failed to update. Are your local changes committed?"
+    fi
+}
+
+start_server() {
+    # If a server is already running, just use its port
+    if [ -f "$PID_FILE" ] && ps -p $(cat "$PID_FILE") > /dev/null 2>&1; then
+        local ACTIVE_PORT=$DEFAULT_PORT
+        [ -f "$PORT_FILE" ] && ACTIVE_PORT=$(cat "$PORT_FILE")
+        echo "Server is already running on port $ACTIVE_PORT"
+        echo "$ACTIVE_PORT" > "/tmp/timevault-current-run.txt"
+    else
+        local TARGET_PORT=$(get_open_port)
+        echo "Starting TimeVault server on port $TARGET_PORT..."
+        cd "$DIR"
+        python3 -m http.server $TARGET_PORT > /dev/null 2>&1 &
+        echo $! > "$PID_FILE"
+        echo $TARGET_PORT > "$PORT_FILE"
+        echo "$TARGET_PORT" > "/tmp/timevault-current-run.txt"
+        sleep 1 # wait a moment for server to bind
+    fi
+}
+
+stop_server() {
+    if [ -f "$PID_FILE" ]; then
+        PID=$(cat "$PID_FILE")
+        if ps -p $PID > /dev/null 2>&1; then
+            echo "Stopping server (PID $PID)..."
+            kill $PID
+            rm -f "$PID_FILE"
+            rm -f "$PORT_FILE"
+            echo "Server stopped."
+        else
+            echo "Server is not running."
+            rm -f "$PID_FILE"
+            rm -f "$PORT_FILE"
+        fi
+    else
+        # Try to find and kill orphan python http servers just in case
+        echo "Stopping any orphaned TimeVault servers..."
+        pkill -f "python3 -m http.server" || echo "No servers found to stop."
+        rm -f "$PORT_FILE"
+    fi
+}
+
+status_server() {
+    if [ -f "$PID_FILE" ]; then
+        PID=$(cat "$PID_FILE")
+        if ps -p $PID > /dev/null 2>&1; then
+            local ACTIVE_PORT=$DEFAULT_PORT
+            [ -f "$PORT_FILE" ] && ACTIVE_PORT=$(cat "$PORT_FILE")
+            echo "🟢 TimeVault Server is RUNNING."
+            echo "   PID: $PID"
+            echo "   Port: $ACTIVE_PORT"
+            echo "   URL: http://localhost:$ACTIVE_PORT"
+        else
+            echo "🔴 TimeVault Server is STOPPED."
+            echo "   (Stale PID file found and removed.)"
+            rm -f "$PID_FILE"
+            rm -f "$PORT_FILE"
+        fi
+    else
+        echo "🔴 TimeVault Server is STOPPED."
+    fi
+}
+
+backup_app() {
+    echo "TimeVault data is stored securely in your browser's LocalStorage."
+    echo ""
+    echo "To backup your data:"
+    echo " 1. Open TimeVault in your browser (timevault open)"
+    echo " 2. Click the gear icon inside the app to open Settings"
+    echo " 3. Scroll to the 'Obsidian Vault Sync' (or Export) section"
+    echo " 4. Save your data to a physical file"
+    echo ""
+    echo "A full automated CLI backup is not possible because browser storage is sandboxed."
+}
+
+open_app() {
+    start_server
+    local ACTIVE_PORT=$(cat "/tmp/timevault-current-run.txt")
+    echo "Opening TimeVault in your default browser..."
+    if command -v xdg-open > /dev/null; then
+        xdg-open "http://localhost:$ACTIVE_PORT"
+    elif command -v open > /dev/null; then
+        open "http://localhost:$ACTIVE_PORT" # macOS
+    else
+        echo "Could not detect ways to open the browser automatically."
+        echo "Please open http://localhost:$ACTIVE_PORT manually."
+    fi
+    rm -f "/tmp/timevault-current-run.txt"
+}
+
+case "$1" in
+    install|--install)
+        install_app
+        ;;
+    uninstall|--uninstall)
+        uninstall_app
+        ;;
+    open|run|start)
+        open_app
+        ;;
+    stop|--stop)
+        stop_server
+        ;;
+    status|--status)
+        status_server
+        ;;
+    update|--update)
+        update_app
+        ;;
+    backup|--backup)
+        backup_app
+        ;;
+    --help|-h|"")
+        show_help
+        ;;
+    *)
+        echo "Unknown command: $1"
+        show_help
+        exit 1
+        ;;
+esac

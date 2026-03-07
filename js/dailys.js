@@ -433,17 +433,28 @@ const DailysModule = {
      * Update the elapsed time display
      */
     updateElapsed() {
-        if (!this.activeTimer || !this.elements.timeLogActiveElapsed) return;
+        if (!this.activeTimer) return;
         const elapsed = Date.now() - this.activeTimer.startTime;
-        this.elements.timeLogActiveElapsed.textContent = this.formatElapsed(elapsed);
+        if (this.elements.timeLogActiveElapsed) {
+            this.elements.timeLogActiveElapsed.textContent = this.formatElapsed(elapsed);
+        }
 
         if (!this.activeTimer.isBreak && App.maxSessionMs && elapsed >= App.maxSessionMs) {
             App.fireSessionWarning(this.activeTimer.taskName);
+            // Auto stop session if configured (for user request)
+            this.stopCurrentTimer();
             if (this.elements.timeLogActive) {
-                this.elements.timeLogActive.classList.add('session-exceeded');
+                this.elements.timeLogActive.classList.remove('session-exceeded');
             }
+            return;
         } else if (this.elements.timeLogActive) {
             this.elements.timeLogActive.classList.remove('session-exceeded');
+        }
+
+        // Live update stats from real-time timer
+        if (this.currentEntries) {
+            this.renderLogOverview(this.currentEntries);
+            this.renderDailyTimeline(this.currentEntries);
         }
     },
 
@@ -455,6 +466,7 @@ const DailysModule = {
 
         const dateStr = getDateString(this.timeLogDate);
         const entries = StorageManager.getTimeLog(dateStr);
+        this.currentEntries = entries; // Save for live updates
 
         if (entries.length === 0) {
             this.elements.timeLogEntries.innerHTML = `
@@ -463,6 +475,7 @@ const DailysModule = {
                 </div>
             `;
             this.renderLogOverview(entries);
+            this.renderDailyTimeline(entries);
             return;
         }
 
@@ -508,25 +521,166 @@ const DailysModule = {
                         <span class="tl-entry-name">${entry.isBreak ? 'Break' : displayName}</span>
                         <span class="tl-entry-dur" ${durStyle ? `style="${durStyle}"` : ''}>${durationShort}</span>
                     </div>
-                    <button class="time-log-entry-delete" data-delete-entry="${entry.id}" title="Delete entry">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                        </svg>
-                    </button>
+                    <div class="time-log-entry-actions">
+                        <button class="time-log-entry-edit" data-edit-entry="${entry.id}" title="Edit end time">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
+                        </button>
+                        <button class="time-log-entry-delete" data-delete-entry="${entry.id}" title="Delete entry">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             `;
         }).join('');
 
-        // Add delete listeners
+        // Add action listeners
         this.elements.timeLogEntries.querySelectorAll('[data-delete-entry]').forEach(btn => {
             btn.addEventListener('click', () => {
                 this.deleteTimeLogEntry(btn.dataset.deleteEntry);
             });
         });
+        this.elements.timeLogEntries.querySelectorAll('[data-edit-entry]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.openEditTimeLogModal(btn.dataset.editEntry);
+            });
+        });
 
         // Render overview stats
         this.renderLogOverview(entries);
+        this.renderDailyTimeline(entries);
+    },
+
+    /**
+     * Render the daily timeline layout (Gantt chart-style)
+     */
+    renderDailyTimeline(entries) {
+        const container = document.querySelector('#daily-timeline-container .timeline-track');
+        if (!container) return;
+
+        const dateStr = getDateString(this.timeLogDate);
+        const isToday = dateStr === getDateString(new Date());
+
+        const dayStartHour = (typeof App !== 'undefined' && App.dayStartHour) ? App.dayStartHour : 0;
+        const startOfDay = new Date(this.timeLogDate);
+        startOfDay.setHours(dayStartHour, 0, 0, 0);
+
+        // If the currently viewed date object is technically "today" but it's before the dayStartHour,
+        // it means we are still in the previous logical day.
+        // E.g., it is 2 AM Tuesday, and day starts at 5 AM. `this.timeLogDate` is likely set to Monday.
+
+        const startOfDayMs = startOfDay.getTime();
+        const endOfDayMs = startOfDayMs + (24 * 60 * 60 * 1000);
+        const totalDayMs = 24 * 60 * 60 * 1000;
+
+        let html = '';
+
+        // Safely fetch system tasks and info
+        const allTasks = StorageManager.getTasks() || [];
+        const allStopwatches = StorageManager.getStopwatches() || [];
+
+        const allBlocks = [...entries];
+
+        // Append active timer if it belongs to currently viewed day
+        if (this.activeTimer && isToday) {
+            allBlocks.push({
+                taskName: this.activeTimer.taskName,
+                startTime: this.activeTimer.startTime,
+                endTime: Date.now(),
+                isBreak: this.activeTimer.isBreak,
+                isActive: true
+            });
+        }
+
+        allBlocks.sort((a, b) => a.startTime - b.startTime);
+
+        let currentEndOfTrack = startOfDayMs;
+
+        allBlocks.forEach(entry => {
+            let start = entry.startTime;
+            let end = entry.endTime;
+
+            // Clamp to bounds of the day visually
+            if (start < startOfDayMs) start = startOfDayMs;
+            if (end > endOfDayMs) end = endOfDayMs;
+
+            const dur = end - start;
+            if (dur <= 0) return;
+
+            // Untracked Gap
+            if (start > currentEndOfTrack) {
+                const gapDur = start - currentEndOfTrack;
+                const gapLeftPct = ((currentEndOfTrack - startOfDayMs) / totalDayMs) * 100;
+                const gapWidthPct = (gapDur / totalDayMs) * 100;
+                const gapTitle = `Untracked Time\n${this.formatTime12h(currentEndOfTrack)} - ${this.formatTime12h(start)}\n${this.formatDurationReadable(gapDur)}`;
+                html += `<div class="timeline-block untracked" style="left: ${gapLeftPct}%; width: ${gapWidthPct}%; background-color: var(--color-bg-hover);" title="${gapTitle}"></div>`;
+            }
+            currentEndOfTrack = Math.max(currentEndOfTrack, end);
+
+            const leftPct = ((start - startOfDayMs) / totalDayMs) * 100;
+            const widthPct = (dur / totalDayMs) * 100;
+
+            let bgColor = '';
+            if (!entry.isBreak) {
+                const task = allTasks.find(t => t.title === entry.taskName);
+                if (task && task.assignedStopwatch) {
+                    const sw = allStopwatches.find(s => s.id === task.assignedStopwatch);
+                    if (sw && sw.color) bgColor = `background-color: ${sw.color};`;
+                }
+            }
+
+            const titleArr = [entry.isBreak ? 'Break' : entry.taskName, this.formatTime12h(start) + ' - ' + this.formatTime12h(end), this.formatDurationReadable(dur)];
+            const activeClass = entry.isActive ? 'timeline-block-active' : '';
+            const breakClass = entry.isBreak ? 'is-break' : '';
+
+            html += `<div class="timeline-block ${breakClass} ${activeClass}" style="left: ${leftPct}%; width: ${widthPct}%; ${bgColor}" title="${titleArr.join('\n')}"></div>`;
+        });
+
+        // Final untracked gap up to current time (if today) or end of day (if past)
+        const limitTime = isToday ? Date.now() : endOfDayMs;
+        if (currentEndOfTrack < limitTime) {
+            const gapDur = limitTime - currentEndOfTrack;
+            if (gapDur > 0) {
+                const gapLeftPct = ((currentEndOfTrack - startOfDayMs) / totalDayMs) * 100;
+                const gapWidthPct = (gapDur / totalDayMs) * 100;
+                const gapTitle = `Untracked Time\n${this.formatTime12h(currentEndOfTrack)} - ${this.formatTime12h(limitTime)}\n${this.formatDurationReadable(gapDur)}`;
+                html += `<div class="timeline-block untracked" style="left: ${gapLeftPct}%; width: ${gapWidthPct}%; background-color: var(--color-bg-hover);" title="${gapTitle}"></div>`;
+            }
+        }
+
+        // Add current time cursor if viewing today
+        if (isToday) {
+            const now = Date.now();
+            if (now >= startOfDayMs && now <= endOfDayMs) {
+                const cursorPct = ((now - startOfDayMs) / totalDayMs) * 100;
+                html += `<div class="timeline-cursor" style="left: ${cursorPct}%" title="Current Time"></div>`;
+            }
+        }
+
+        container.innerHTML = html;
+
+        // Render 8 intervals (every 3 hours)
+        const labelsContainer = document.querySelector('#daily-timeline-container .timeline-labels');
+        if (labelsContainer) {
+            let labelsHtml = '';
+            for (let i = 0; i <= 8; i++) { // 0 to 8 = 9 labels spanning 24h
+                const hourMarker = new Date(startOfDayMs + (i * 3 * 60 * 60 * 1000));
+
+                // For the very last label, we want to show it as the end of the day visually
+                if (i === 8) {
+                    hourMarker.setMinutes(59);
+                    hourMarker.setSeconds(59);
+                }
+
+                labelsHtml += `<span>${this.formatTime12h(hourMarker.getTime())}</span>`;
+            }
+            labelsContainer.innerHTML = labelsHtml;
+        }
     },
 
     /**
@@ -550,6 +704,17 @@ const DailysModule = {
                 studyMs += dur;
             }
         });
+
+        // Add active timer to live stats if on today
+        if (this.activeTimer && isToday) {
+            const activeDur = Date.now() - this.activeTimer.startTime;
+            totalMs += activeDur;
+            if (this.activeTimer.isBreak) {
+                breakMs += activeDur;
+            } else {
+                studyMs += activeDur;
+            }
+        }
 
         // Get waste time
         if (isToday && typeof AdvancedStopwatchesModule !== 'undefined') {
@@ -585,14 +750,24 @@ const DailysModule = {
             remainingStr = this.formatDurationReadable(remainMs);
         }
 
+        const countSessions = entries.length + (this.activeTimer && isToday ? 1 : 0);
+
+        // Calculate untracked time explicitly
+        let untrackedMs = 0;
+        const availableMs = (isToday ? Date.now() : todayEnd.getTime()) - todayStart.getTime();
+        if (availableMs > 0) {
+            untrackedMs = Math.max(0, availableMs - totalMs);
+        }
+
         // Update DOM
         const el = (id) => document.getElementById(id);
         if (el('stat-elapsed')) el('stat-elapsed').textContent = this.formatDurationReadable(totalMs);
         if (el('stat-study')) el('stat-study').textContent = this.formatDurationReadable(studyMs);
         if (el('stat-waste')) el('stat-waste').textContent = this.formatDurationReadable(wasteMs);
+        if (el('stat-untracked')) el('stat-untracked').textContent = this.formatDurationReadable(untrackedMs);
         if (el('stat-tasks-done')) el('stat-tasks-done').textContent = tasksDone;
         if (el('stat-remaining')) el('stat-remaining').textContent = remainingStr;
-        if (el('stat-sessions')) el('stat-sessions').textContent = entries.length;
+        if (el('stat-sessions')) el('stat-sessions').textContent = countSessions;
     },
 
     /**
@@ -611,6 +786,10 @@ const DailysModule = {
      * Delete a time log entry
      */
     deleteTimeLogEntry(entryId) {
+        if (!confirm('Are you sure you want to remove this session?')) {
+            return;
+        }
+
         const dateStr = getDateString(this.timeLogDate);
         const entry = StorageManager.getDailyEntry(dateStr);
         if (!entry || !entry.timeLog) return;
@@ -618,7 +797,85 @@ const DailysModule = {
         entry.timeLog = entry.timeLog.filter(e => e.id !== entryId);
         StorageManager.saveDailyEntry(dateStr, entry);
         this.renderTimeLog();
-        App.showToast('Entry deleted');
+        App.showToast('Session removed');
+    },
+
+    /**
+     * Open the edit modal for a time log entry
+     */
+    openEditTimeLogModal(entryId) {
+        const dateStr = getDateString(this.timeLogDate);
+        const entryObj = StorageManager.getDailyEntry(dateStr);
+        if (!entryObj || !entryObj.timeLog) return;
+
+        const entry = entryObj.timeLog.find(e => e.id === entryId);
+        if (!entry) return;
+
+        this.editingTimeLogId = entryId;
+
+        const modal = document.getElementById('timelog-edit-modal');
+        const timeInput = document.getElementById('timelog-edit-time');
+
+        if (modal && timeInput) {
+            // Set input value to current end time
+            const date = new Date(entry.endTime);
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            timeInput.value = `${hours}:${minutes}`;
+
+            modal.classList.add('open');
+
+            // Re-bind save and close
+            const saveBtn = document.getElementById('save-timelog-edit-btn');
+            saveBtn.onclick = () => this.saveTimeLogEdit();
+
+            modal.querySelectorAll('[data-close-modal]').forEach(btn => {
+                btn.onclick = () => {
+                    modal.classList.remove('open');
+                    this.editingTimeLogId = null;
+                };
+            });
+        }
+    },
+
+    /**
+     * Save the edited time log entry
+     */
+    saveTimeLogEdit() {
+        if (!this.editingTimeLogId) return;
+
+        const timeInput = document.getElementById('timelog-edit-time');
+        const modal = document.getElementById('timelog-edit-modal');
+        if (!timeInput || !timeInput.value) return;
+
+        const dateStr = getDateString(this.timeLogDate);
+        const entryObj = StorageManager.getDailyEntry(dateStr);
+        if (!entryObj || !entryObj.timeLog) return;
+
+        const entry = entryObj.timeLog.find(e => e.id === this.editingTimeLogId);
+        if (!entry) return;
+
+        // Parse new end time
+        const [hours, minutes] = timeInput.value.split(':').map(Number);
+
+        // Base date on the existing end time so cross-day logic works mostly
+        // Alternatively, base date on the current day's midnight.
+        const newEndDate = new Date(entry.endTime);
+        newEndDate.setHours(hours, minutes, 0, 0);
+
+        // Basic validation
+        if (newEndDate.getTime() < entry.startTime) {
+            App.showToast('End time cannot be before start time');
+            return;
+        }
+
+        entry.endTime = newEndDate.getTime();
+        StorageManager.saveDailyEntry(dateStr, entryObj);
+
+        modal.classList.remove('open');
+        this.editingTimeLogId = null;
+        this.renderTimeLog();
+        App.showToast('Session updated');
     },
 
     // ============================================

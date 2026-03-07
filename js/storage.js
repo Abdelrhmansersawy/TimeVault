@@ -16,7 +16,8 @@ const StorageManager = {
         TASKS: 'focusclock_tasks',        // Task database
         ACTIVE_TIMER: 'focusclock_active_timer',  // Active task/break timer state
         TAGS: 'focusclock_tags',                   // Persistent tag library
-        HABITS: 'focusclock_habits'                // Habit tracking data
+        HABITS: 'focusclock_habits',               // Habit tracking data
+        WORLD_CLOCKS: 'focusclock_world_clocks'    // Custom timezones
     },
 
     /**
@@ -61,6 +62,30 @@ const StorageManager = {
         } catch (error) {
             console.error(`Error removing from localStorage: ${key}`, error);
         }
+    },
+
+    // ============================================
+    // World Clocks
+    // ============================================
+
+    getWorldClocks() {
+        return this.get(this.KEYS.WORLD_CLOCKS, []);
+    },
+
+    saveWorldClocks(clocks) {
+        return this.set(this.KEYS.WORLD_CLOCKS, clocks);
+    },
+
+    addWorldClock(clock) {
+        const clocks = this.getWorldClocks();
+        clock.id = 'wc_' + Date.now().toString();
+        clocks.push(clock);
+        return this.saveWorldClocks(clocks);
+    },
+
+    deleteWorldClock(id) {
+        const clocks = this.getWorldClocks().filter(c => c.id !== id);
+        return this.saveWorldClocks(clocks);
     },
 
     // ============================================
@@ -718,7 +743,16 @@ function formatDate(date) {
     return date.toLocaleDateString('en-US', options);
 }
 
-function getDateString(date = new Date()) {
+function getDateString(dateInput) {
+    const date = dateInput ? new Date(dateInput) : new Date();
+
+    // Adjust for custom day start hour (e.g. if 5am, then 3am belongs to previous day)
+    if (typeof App !== 'undefined' && App.dayStartHour) {
+        if (date.getHours() < App.dayStartHour) {
+            date.setDate(date.getDate() - 1);
+        }
+    }
+
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');

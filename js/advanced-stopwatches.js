@@ -482,7 +482,8 @@ const AdvancedStopwatchesModule = {
                     const card2 = document.querySelector(`[data-stopwatch-id="${sw.id}"]`);
                     if (sessionMs >= App.maxSessionMs) {
                         App.fireSessionWarning(sw.name);
-                        card2?.classList.add('session-exceeded');
+                        this.stopStopwatch(sw.id);
+                        card2?.classList.remove('session-exceeded');
                     } else {
                         card2?.classList.remove('session-exceeded');
                     }
