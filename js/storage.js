@@ -176,7 +176,20 @@ const StorageManager = {
     // ============================================
 
     getStopwatches() {
-        return this.get(this.KEYS.STOPWATCHES, []);
+        let stopwatches = this.get(this.KEYS.STOPWATCHES, []);
+
+        // Ensure Untracked Time always exists
+        if (!stopwatches.find(sw => sw.id === 'untracked')) {
+            stopwatches.unshift({
+                id: 'untracked',
+                name: 'Untracked Time',
+                color: '#6b7280', // Grey color for untracked
+                icon: 'activity',
+                order: -1 // Keep it at the top
+            });
+            // Don't save it to storage necessarily, just inject it at runtime
+        }
+        return stopwatches;
     },
 
     saveStopwatches(stopwatches) {
@@ -200,11 +213,13 @@ const StorageManager = {
     },
 
     deleteStopwatch(id) {
+        if (id === 'untracked') return false; // Cannot delete built-in untracked time
         // Soft delete - mark as deleted but keep for history
         return this.updateStopwatch(id, { deleted: true, isRunning: false });
     },
 
     permanentlyDeleteStopwatch(id) {
+        if (id === 'untracked') return false;
         const stopwatches = this.getStopwatches().filter(sw => sw.id !== id);
         return this.saveStopwatches(stopwatches);
     },

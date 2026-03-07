@@ -10,7 +10,7 @@
  */
 
 // Built-in Waste Time stopwatch ID (cannot be deleted by user)
-const WASTE_TIME_ID = 'waste-time-builtin';
+const WASTE_TIME_ID = 'untracked';
 
 const AdvancedStopwatchesModule = {
     elements: {
@@ -176,8 +176,8 @@ const AdvancedStopwatchesModule = {
         if (!wasteTime) {
             wasteTime = {
                 id: WASTE_TIME_ID,
-                name: 'Waste Time',
-                color: getComputedStyle(document.body).getPropertyValue('--color-danger').trim() || '#e05561',
+                name: 'Untracked Time',
+                color: '#6b7280',
                 goalMs: 2 * 60 * 60 * 1000,
                 goalDirection: 'minimize',
                 displayMode: 'circular',
@@ -190,7 +190,7 @@ const AdvancedStopwatchesModule = {
             };
             this.stopwatches.push(wasteTime);
             StorageManager.addStopwatch(wasteTime);
-            console.log('Created built-in Waste Time stopwatch');
+            console.log('Created built-in Untracked Time stopwatch');
         }
     },
 

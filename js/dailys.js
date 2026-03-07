@@ -354,6 +354,11 @@ const DailysModule = {
                 endTime: endTime,
                 isBreak: wasBreak
             });
+
+            if (this.activeTimer.taskName === "Untracked Time" || this.activeTimer.taskName === "Auto Break (Idle)") {
+                StorageManager.addHistoryRecord({ stopwatchId: 'untracked', date: startDate, totalMs: midnight.getTime() - this.activeTimer.startTime });
+                StorageManager.addHistoryRecord({ stopwatchId: 'untracked', date: endDate, totalMs: endTime - midnight.getTime() });
+            }
         } else {
             StorageManager.addTimeLogEntry(startDate, {
                 id: generateId(),
@@ -362,6 +367,10 @@ const DailysModule = {
                 endTime: endTime,
                 isBreak: wasBreak
             });
+
+            if (this.activeTimer.taskName === "Untracked Time" || this.activeTimer.taskName === "Auto Break (Idle)") {
+                StorageManager.addHistoryRecord({ stopwatchId: 'untracked', date: startDate, totalMs: endTime - this.activeTimer.startTime });
+            }
         }
 
         // Sync: stop Focus stopwatch (unless this call came from Focus)
@@ -421,10 +430,12 @@ const DailysModule = {
         this.elements.timeLogActive.style.display = 'block';
         this.elements.timeLogStartControls.style.display = 'none';
 
+        let isUntracked = false;
         let labelText = this.activeTimer.taskName;
         if (this.activeTimer.isBreak) {
             if (this.activeTimer.taskName === "Untracked Time" || this.activeTimer.taskName === "Auto Break (Idle)") {
                 labelText = `[Untracked] Untracked Time`;
+                isUntracked = true;
             } else {
                 labelText = `[Break] ${this.activeTimer.taskName}`;
             }
@@ -434,7 +445,8 @@ const DailysModule = {
         this.elements.timeLogActiveStart.textContent = this.formatTime12h(this.activeTimer.startTime);
 
         // Set break class
-        this.elements.timeLogActive.classList.toggle('is-break', this.activeTimer.isBreak);
+        this.elements.timeLogActive.classList.toggle('is-break', this.activeTimer.isBreak && !isUntracked);
+        this.elements.timeLogActive.classList.toggle('is-untracked', isUntracked);
 
         // Update elapsed immediately
         this.updateElapsed();
@@ -446,7 +458,7 @@ const DailysModule = {
     hideActiveTimer() {
         if (this.elements.timeLogActive) {
             this.elements.timeLogActive.style.display = 'none';
-            this.elements.timeLogActive.classList.remove('is-break');
+            this.elements.timeLogActive.classList.remove('is-break', 'is-untracked');
         }
         if (this.elements.timeLogStartControls) {
             this.elements.timeLogStartControls.style.display = 'flex';
@@ -1470,25 +1482,15 @@ const DailysModule = {
     },
 
     addRoutineItem() {
-        const text = prompt('Enter routine item:');
-        if (!text || !text.trim()) return;
-
-        const dateStr = getDateString(this.currentDate);
-        const entry = StorageManager.getDailyEntry(dateStr) || this.getEmptyEntry();
-
-        entry.routine = entry.routine || [];
-        entry.routine.push({ text: text.trim(), completed: false });
-
-        StorageManager.saveDailyEntry(dateStr, entry);
-        this.render();
-        App.showToast('Routine item added');
+        this.openTaskPickerModal('routine');
     },
 
     // ============================================
     // Task Picker Modal
     // ============================================
 
-    openTaskPickerModal() {
+    openTaskPickerModal(mode = 'plan') {
+        this.currentPickerMode = mode;
         let modal = document.getElementById('task-picker-modal');
         if (!modal) {
             modal = document.createElement('div');
@@ -1498,11 +1500,11 @@ const DailysModule = {
                 <div class="modal-backdrop"></div>
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h3>Add Tasks to Plan</h3>
+                        <h3 id="task-picker-modal-title">Add Tasks</h3>
                         <button class="modal-close" data-close-modal>&times;</button>
                     </div>
                     <div class="modal-body">
-                        <p class="modal-hint">Select tasks from your Task Database to add to today's plan:</p>
+                        <p class="modal-hint" id="task-picker-modal-hint"></p>
                         <div id="task-picker-list" class="task-picker-list"></div>
                         <div class="modal-create-new">
                             <p>Need a new task? <button id="create-task-from-daily" class="btn btn-sm btn-ghost">Create in Tasks</button></p>
@@ -1528,11 +1530,22 @@ const DailysModule = {
             });
         }
 
-        this.populateTaskPicker();
+        const titleEl = modal.querySelector('#task-picker-modal-title');
+        const hintEl = modal.querySelector('#task-picker-modal-hint');
+
+        if (mode === 'plan') {
+            titleEl.textContent = 'Add Tasks to Plan';
+            hintEl.textContent = "Select tasks from your Task Database to add to today's plan:";
+        } else {
+            titleEl.textContent = 'Add Routine Items';
+            hintEl.textContent = "Select tasks from your Task Database to add as daily habits/routine:";
+        }
+
+        this.populateTaskPicker(mode);
         modal.classList.add('open');
     },
 
-    populateTaskPicker() {
+    populateTaskPicker(mode) {
         const list = document.getElementById('task-picker-list');
         if (!list) return;
 
@@ -1540,12 +1553,17 @@ const DailysModule = {
         const entry = StorageManager.getDailyEntry(dateStr) || this.getEmptyEntry();
         const alreadyPlanned = entry.plannedTaskIds || [];
         const alreadyDone = entry.completedTaskIds || [];
+        const routineTexts = (entry.routine || []).map(r => r.text);
 
-        const tasks = StorageManager.getTasks().filter(t =>
-            t.status !== 'done' &&
-            !alreadyPlanned.includes(t.id) &&
-            !alreadyDone.includes(t.id)
-        );
+        const tasks = StorageManager.getTasks().filter(t => {
+            if (t.status === 'done') return false;
+
+            if (mode === 'plan') {
+                return !alreadyPlanned.includes(t.id) && !alreadyDone.includes(t.id);
+            } else {
+                return !routineTexts.includes(t.title);
+            }
+        });
 
         if (tasks.length === 0) {
             list.innerHTML = `<p class="task-picker-empty">No available tasks. Create some in the Tasks tab!</p>`;
@@ -1571,9 +1589,9 @@ const DailysModule = {
 
     addSelectedTasks() {
         const list = document.getElementById('task-picker-list');
-        const selected = Array.from(list.querySelectorAll('input:checked')).map(cb => cb.value);
+        const selectedIds = Array.from(list.querySelectorAll('input:checked')).map(cb => cb.value);
 
-        if (selected.length === 0) {
+        if (selectedIds.length === 0) {
             App.showToast('Select at least one task');
             return;
         }
@@ -1581,13 +1599,26 @@ const DailysModule = {
         const dateStr = getDateString(this.currentDate);
         const entry = StorageManager.getDailyEntry(dateStr) || this.getEmptyEntry();
 
-        entry.plannedTaskIds = entry.plannedTaskIds || [];
-        selected.forEach(id => {
-            if (!entry.plannedTaskIds.includes(id)) {
-                entry.plannedTaskIds.push(id);
-                StorageManager.updateTask(id, { status: 'in-progress' });
-            }
-        });
+        if (this.currentPickerMode === 'plan') {
+            entry.plannedTaskIds = entry.plannedTaskIds || [];
+            selectedIds.forEach(id => {
+                if (!entry.plannedTaskIds.includes(id)) {
+                    entry.plannedTaskIds.push(id);
+                    StorageManager.updateTask(id, { status: 'in-progress' }); // Keep this line for 'plan' mode
+                }
+            });
+            App.showToast(`${selectedIds.length} tasks planned`);
+        } else { // This is the 'routine' mode
+            entry.routine = entry.routine || [];
+            const allTasks = StorageManager.getTasks();
+            selectedIds.forEach(id => {
+                const t = allTasks.find(x => x.id === id);
+                if (t && !entry.routine.find(r => r.text === t.title)) {
+                    entry.routine.push({ text: t.title, completed: false });
+                }
+            });
+            App.showToast(`${selectedIds.length} routine items added`);
+        }
 
         StorageManager.saveDailyEntry(dateStr, entry);
         this.closeTaskPickerModal();
@@ -1596,8 +1627,6 @@ const DailysModule = {
         if (typeof TasksModule !== 'undefined') {
             TasksModule.render();
         }
-
-        App.showToast(`Added ${selected.length} task(s) to plan`);
     },
 
     // ============================================
