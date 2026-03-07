@@ -39,7 +39,7 @@ Track your time, manage tasks, and reflect on your daily progress – all in one
 
 ## Getting Started
 
-### 🐧 Linux & macOS
+### Linux & macOS
 
 **Option 1: Quick Install (Recommended)**
 Install TimeVault system-wide with a single command:
@@ -65,7 +65,7 @@ timevault open
 
 ---
 
-### 🪟 Windows
+### Windows
 
 Windows does not natively support the bash installation scripts unless you use WSL (Windows Subsystem for Linux). If you want to run TimeVault natively on Windows, follow these steps:
 
