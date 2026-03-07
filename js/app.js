@@ -14,6 +14,7 @@ const App = {
         this.setupTimeDateSettings();
         this.setupMaxSession();
         this.setupTabVisibility();
+        this.setupIdleTracker();
 
         // Initialize account creation date (for graph boundaries)
         StorageManager.initAccountCreatedAt();
@@ -125,34 +126,136 @@ const App = {
     },
 
     setupTabVisibility() {
-        const tabs = ['calendar', 'clock', 'stopwatches', 'habits', 'graphs'];
+        const defaultOrder = ['timelog', 'stopwatches', 'clock', 'tasks', 'dailys', 'habits', 'graphs'];
+        const labels = {
+            'timelog': 'Log', 'stopwatches': 'Focus', 'clock': 'Clock',
+            'tasks': 'Tasks', 'dailys': 'Daily', 'habits': 'Habits', 'graphs': 'Graphs'
+        };
+        const alwaysVisible = ['timelog'];
 
-        tabs.forEach(tab => {
-            const toggle = document.getElementById(`toggle-tab-${tab}`);
-            const navItem = document.querySelector(`.nav-tab[data-section="${tab}"]`);
+        let appMode = localStorage.getItem('appMode') || 'customized';
+        const modeSelect = document.getElementById('app-mode-select');
+        if (modeSelect) {
+            modeSelect.value = appMode;
+            modeSelect.addEventListener('change', (e) => {
+                localStorage.setItem('appMode', e.target.value);
+                this.setupTabVisibility();
+            });
+        }
 
-            if (toggle && navItem) {
-                // Read saved state or default to true
-                let isVisible = localStorage.getItem(`tabVisible_${tab}`);
-                isVisible = isVisible === null ? true : isVisible === 'true';
+        let savedOrder = localStorage.getItem('tabOrder');
+        savedOrder = savedOrder ? JSON.parse(savedOrder) : defaultOrder;
 
-                // Set initial UI state
-                toggle.checked = isVisible;
-                navItem.style.display = isVisible ? 'flex' : 'none';
+        // Ensure all default tabs exist in savedOrder
+        defaultOrder.forEach(t => { if (!savedOrder.includes(t)) savedOrder.push(t); });
 
-                // Listen for changes
-                toggle.addEventListener('change', (e) => {
-                    const checked = e.target.checked;
-                    localStorage.setItem(`tabVisible_${tab}`, checked);
-                    navItem.style.display = checked ? 'flex' : 'none';
+        const container = document.getElementById('tab-visibility-list');
+        if (container) {
+            container.innerHTML = '';
 
-                    // If hiding the currently active tab, route back to timelog
-                    if (!checked && this.currentSection === tab) {
-                        this.navigateTo('timelog');
+            // If not customized, we might disable sorting or just grey out the toggles
+            const isCustomized = (appMode === 'customized');
+
+            savedOrder.forEach((tab, index) => {
+                let isVisible = true;
+                if (isCustomized) {
+                    let lsVal = localStorage.getItem(`tabVisible_${tab}`);
+                    isVisible = lsVal === null ? true : lsVal === 'true';
+                } else if (appMode === 'simple') {
+                    isVisible = ['timelog', 'stopwatches', 'tasks'].includes(tab);
+                } else if (appMode === 'advanced') {
+                    isVisible = true;
+                }
+
+                // Force visibility for alwaysVisible tabs
+                if (alwaysVisible.includes(tab)) isVisible = true;
+
+                // Set initial DOM Flex order
+                const navItem = document.querySelector(`.nav-tab[data-section="${tab}"]`);
+                if (navItem) {
+                    navItem.style.order = index;
+                    navItem.style.display = isVisible ? 'flex' : 'none';
+                }
+
+                if (!labels[tab]) return; // Skip if invalid
+
+                const row = document.createElement('div');
+                row.className = 'setting-row';
+                if (!isCustomized) row.style.opacity = '0.5';
+
+                let toggleHtml = alwaysVisible.includes(tab) ?
+                    `<small style="color:var(--color-text-muted)">Required</small>` :
+                    `<label class="toggle"><input type="checkbox" id="toggle-tab-${tab}" ${isVisible ? 'checked' : ''} ${!isCustomized ? 'disabled' : ''}><span class="toggle-slider"></span></label>`;
+
+                row.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span class="setting-label">${labels[tab]}</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <div style="display:flex; gap:4px;">
+                            <button class="btn btn-icon btn-sm" onclick="App.moveTab('${tab}', -1)" ${index === 0 || !isCustomized ? 'disabled' : ''}>↑</button>
+                            <button class="btn btn-icon btn-sm" onclick="App.moveTab('${tab}', 1)" ${index === savedOrder.length - 1 || !isCustomized ? 'disabled' : ''}>↓</button>
+                        </div>
+                        ${toggleHtml}
+                    </div>
+                `;
+                container.appendChild(row);
+
+                // Listen for toggle changes
+                if (!alwaysVisible.includes(tab)) {
+                    const toggle = row.querySelector(`#toggle-tab-${tab}`);
+                    if (toggle) {
+                        toggle.addEventListener('change', (e) => {
+                            const checked = e.target.checked;
+                            localStorage.setItem(`tabVisible_${tab}`, checked);
+                            if (navItem) navItem.style.display = checked ? 'flex' : 'none';
+                            if (!checked && App.currentSection === tab) {
+                                App.navigateTo('timelog');
+                            }
+                        });
                     }
-                });
-            }
+                }
+            });
+        }
+    },
+
+    moveTab(tab, direction) {
+        const defaultOrder = ['timelog', 'stopwatches', 'clock', 'tasks', 'dailys', 'habits', 'graphs'];
+        let savedOrder = localStorage.getItem('tabOrder');
+        savedOrder = savedOrder ? JSON.parse(savedOrder) : defaultOrder;
+
+        const index = savedOrder.indexOf(tab);
+        if (index === -1) return;
+        const newIndex = index + direction;
+
+        if (newIndex >= 0 && newIndex < savedOrder.length) {
+            // Swap
+            [savedOrder[index], savedOrder[newIndex]] = [savedOrder[newIndex], savedOrder[index]];
+            localStorage.setItem('tabOrder', JSON.stringify(savedOrder));
+            this.setupTabVisibility(); // Re-render settings UI and sidebar
+        }
+    },
+
+    setupIdleTracker() {
+        let idleTimeout;
+        const IDLE_LIMIT = 5000; // 5 seconds of inactivity
+
+        const resetIdle = () => {
+            clearTimeout(idleTimeout);
+            idleTimeout = setTimeout(() => {
+                if (typeof DailysModule !== 'undefined' && DailysModule.startBreak) {
+                    if (!DailysModule.activeTimer || !DailysModule.activeTimer.isBreak) {
+                        DailysModule.startBreak("Auto Break (Idle)");
+                        App.showToast("Started break due to 5s inactivity");
+                    }
+                }
+            }, IDLE_LIMIT);
+        };
+
+        ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart'].forEach(evt => {
+            document.addEventListener(evt, resetIdle, { passive: true });
         });
+        resetIdle();
     },
 
     showToast(message, duration = 3000) {

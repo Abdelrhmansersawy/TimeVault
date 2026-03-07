@@ -93,6 +93,7 @@ timevault update
 ## TODO / Future Features
 
 - Make plugin with Arch
+- Add timevault_cli functionality to add from terminal
 
 ```
 MIT License

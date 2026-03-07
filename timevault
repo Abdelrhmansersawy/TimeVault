@@ -2,7 +2,7 @@
 
 # TimeVault Simple CLI
 
-DEFAULT_PORT=8080
+DEFAULT_PORT=51888
 
 # Resolve the real directory of the script, even if it is a symlink
 SCRIPT_PATH="${BASH_SOURCE[0]}"
@@ -44,6 +44,9 @@ show_help() {
     echo "  status    Check if the TimeVault server is currently running"
     echo "  update    Pull the latest changes from git"
     echo "  backup    Provides instructions on how to backup your TimeVault data"
+    echo "  daemon    Manage TimeVault as a background service (install, start, stop, status)"
+    echo "  commit    Auto-commit current changes to git (Usage: timevault commit 'msg')"
+    echo "  --port    Specify a port to run the server on (Usage: timevault open --port 8080)"
     echo "  --help    Show this help message"
     echo ""
     echo "TimeVault: https://github.com/Abdelrhmansersawy/TimeVault"
@@ -146,7 +149,62 @@ status_server() {
         fi
     else
         echo "🔴 TimeVault Server is STOPPED."
+}
+
+manage_daemon() {
+    local DAEMON_ACTION=$1
+    local SERVICE_FILE="$HOME/.config/systemd/user/timevault.service"
+    
+    case "$DAEMON_ACTION" in
+        install)
+            echo "Installing TimeVault Daemon..."
+            mkdir -p "$HOME/.config/systemd/user"
+            cat > "$SERVICE_FILE" << EOF
+[Unit]
+Description=TimeVault Local Server
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/env python3 -m http.server $DEFAULT_PORT
+WorkingDirectory=$DIR
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=default.target
+EOF
+            systemctl --user daemon-reload
+            systemctl --user enable timevault.service
+            echo "Daemon installed and enabled to start on boot."
+            echo "Use 'timevault daemon start' to run it now."
+            ;;
+        start)
+            systemctl --user start timevault.service
+            echo "TimeVault daemon started."
+            ;;
+        stop)
+            systemctl --user stop timevault.service
+            echo "TimeVault daemon stopped."
+            ;;
+        status)
+            systemctl --user status timevault.service
+            ;;
+        *)
+            echo "Usage: timevault daemon {install|start|stop|status}"
+            ;;
+    esac
+}
+
+commit_app() {
+    local MSG=$1
+    if [ -z "$MSG" ]; then
+        MSG="chore: timevault auto-commit"
     fi
+    echo "Committing changes to Git..."
+    cd "$DIR"
+    git add .
+    git commit -m "$MSG"
+    echo "Committed successfully."
 }
 
 backup_app() {
@@ -176,6 +234,19 @@ open_app() {
     rm -f "/tmp/timevault-current-run.txt"
 }
 
+# Parse global arguments first
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --port)
+            DEFAULT_PORT="$2"
+            shift 2
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+
 case "$1" in
     install|--install)
         install_app
@@ -197,6 +268,12 @@ case "$1" in
         ;;
     backup|--backup)
         backup_app
+        ;;
+    daemon)
+        manage_daemon "$2"
+        ;;
+    commit)
+        commit_app "$2"
         ;;
     --help|-h|"")
         show_help

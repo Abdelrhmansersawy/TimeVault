@@ -38,7 +38,7 @@ const ClockModule = {
 
         if (this.elements.addWorldClockBtn) {
             this.elements.addWorldClockBtn.addEventListener('click', () => {
-                App.openModal(this.elements.worldClockModal);
+                this.elements.worldClockModal.classList.add('open');
                 document.getElementById('world-clock-name').value = '';
                 document.getElementById('world-clock-offset').value = '';
                 document.getElementById('world-clock-name').focus();
@@ -72,7 +72,7 @@ const ClockModule = {
         }
 
         StorageManager.addWorldClock({ name, offset });
-        App.closeModal(this.elements.worldClockModal);
+        this.elements.worldClockModal.classList.remove('open');
         this.renderWorldClocks();
         this.update(); // Force immediate tick
     },
