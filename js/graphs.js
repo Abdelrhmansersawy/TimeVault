@@ -537,32 +537,34 @@ const GraphsModule = {
         }).join('');
 
         return `
-            <div class="graph-card graph-card-mini ${sw.deleted ? 'deleted' : ''}" data-graph-id="${sw.id}" style="padding: 16px; border-radius: 12px; display: flex; flex-direction: column;">
-                <div class="graph-header" style="margin-bottom: 12px; padding: 0;">
-                    <div class="graph-color-indicator" style="background: ${sw.color || '#6366f1'}; width: 12px; height: 12px; border-radius: 4px;"></div>
-                    <span class="graph-title" style="font-size: 15px; font-weight: 500;">${this.escapeHtml(sw.name)}</span>
-                    ${sw.deleted ? '<span class="graph-deleted-badge">Deleted</span>' : ''}
-                    <select class="category-range-select select-input" data-graph-id="${sw.id}" style="margin-left: auto; padding: 2px 6px; font-size: 11px;">
+            <div class="graph-card graph-card-mini ${sw.deleted ? 'deleted' : ''}" data-graph-id="${sw.id}" style="border-radius: 12px; display: flex; flex-direction: column;">
+                <div class="graph-header" style="justify-content: space-between; margin-bottom: 12px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div class="graph-color-indicator" style="background: ${sw.color || '#6366f1'}; width: 12px; height: 12px; border-radius: 4px;"></div>
+                        <span class="graph-title" style="font-size: 15px; font-weight: 500;">${this.escapeHtml(sw.name)}</span>
+                        ${sw.deleted ? '<span class="graph-deleted-badge">Deleted</span>' : ''}
+                    </div>
+                    <select class="category-range-select select-input" data-graph-id="${sw.id}" style="padding: 2px 6px; font-size: 11px;">
                         ${rangeOptions}
                     </select>
                 </div>
                 
-                <div class="graph-stats-mini" style="display: flex; gap: 16px; margin-bottom: 16px;">
+                <div class="graph-stats-mini" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px;">
                     <div style="display: flex; flex-direction: column;">
                         <span style="font-size: 11px; color: var(--color-text-muted);">Total</span>
-                        <span style="font-size: 16px; font-weight: 600;">${formatTimeShort(totalMs)}</span>
+                        <span style="font-size: 14px; font-weight: 600;">${formatTimeShort(totalMs)}</span>
                     </div>
                     <div style="display: flex; flex-direction: column;">
                         <span style="font-size: 11px; color: var(--color-text-muted);">Average</span>
-                        <span style="font-size: 16px; font-weight: 600;">${formatTimeShort(avgMs)}</span>
+                        <span style="font-size: 14px; font-weight: 600;">${formatTimeShort(avgMs)}</span>
                     </div>
                     <div style="display: flex; flex-direction: column;">
                         <span style="font-size: 11px; color: var(--color-text-muted);">Goal Reached</span>
-                        <span style="font-size: 16px; font-weight: 600; color: var(--color-success);">${goalReachedPercent}%</span>
+                        <span style="font-size: 14px; font-weight: 600; color: var(--color-success);">${goalReachedPercent}%</span>
                     </div>
                 </div>
 
-                <div class="graph-container" style="flex: 1; min-height: 80px; padding: 0;">
+                <div class="graph-container" style="min-height: 80px; position: relative; flex-grow: 1;">
                     ${this.chartType === 'bar'
                 ? this.renderBarChart(data, Math.max(...data.map(d => d.value), 1), sw.color || '#6366f1', goalMs, isMinimize)
                 : this.renderLineChart(data, Math.max(...data.map(d => d.value), 1), sw.color || '#6366f1', goalMs, isMinimize)}

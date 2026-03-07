@@ -750,6 +750,8 @@
                             <span>Show deleted</span>
                         </label>
                     </div>
+                </div> <!-- Close .section-header -->
+                <div class="section-content">
                     <div id="graphs-dashboard" class="graphs-dashboard" style="display: none; margin-bottom: 24px;">
                         <!-- Top-Level Stats -->
                         <div id="graphs-stats-row" class="graphs-stats-row"
@@ -758,27 +760,28 @@
                         </div>
 
                         <!-- Breakdowns -->
-                        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px;">
+                        <div style="display: grid; grid-template-columns: 350px 1fr; gap: 24px;">
                             <!-- Doughnut Chart Area -->
                             <div id="daily-distribution-container" class="graph-card"
-                                style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 250px;">
+                                style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 250px; padding: 24px;">
                                 <h3 class="analysis-section-title" style="margin-bottom: 16px; width: 100%;">Time
                                     Distribution</h3>
                                 <svg id="distribution-doughnut" width="200" height="200" viewBox="0 0 200 200"></svg>
                                 <div id="distribution-legend"
-                                    style="margin-top: 16px; display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;">
+                                    style="margin-top: 16px; display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; width: 100%;">
                                 </div>
                             </div>
 
-                            <!-- Global Overview Graph (Moved inside the dashboard grid for wider view) -->
-                            <div id="global-overview-container" class="global-overview-container" style="margin: 0;">
+                            <!-- Global Overview Graph -->
+                            <div id="global-overview-container" class="global-overview-container"
+                                style="margin: 0; min-height: 250px;">
                                 <!-- Global overview graph will be rendered here -->
                             </div>
                         </div>
                     </div>
 
                     <div id="graphs-container" class="graphs-container"
-                        style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px;">
+                        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px;">
                         <!-- Individual graphs will be rendered here via JS -->
                     </div>
                     <div id="no-graphs" class="empty-state">
@@ -791,6 +794,7 @@
                         <p>No data to display</p>
                         <p class="empty-hint">Start using stopwatches to see your progress</p>
                     </div>
+                </div>
             </section>
 
             <!-- Settings Section -->
