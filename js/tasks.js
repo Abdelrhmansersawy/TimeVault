@@ -48,7 +48,7 @@ const TasksModule = {
         this.tasks = StorageManager.getTasks();
 
         const stopwatches = StorageManager.getStopwatches().filter(
-            s => !s.deleted && s.id !== 'waste-time-builtin'
+            s => !s.deleted && s.id !== 'waste-time-builtin' && !s.isBuiltIn
         );
 
         if (stopwatches.length === 0 && this.tasks.length === 0) {
@@ -354,7 +354,7 @@ const TasksModule = {
 
     reorderColumns(fromId, toId) {
         const stopwatches = StorageManager.getStopwatches().filter(
-            s => !s.deleted && s.id !== 'waste-time-builtin'
+            s => !s.deleted && s.id !== 'waste-time-builtin' && !s.isBuiltIn
         );
         let order = this.getColumnOrder() || stopwatches.map(s => s.id);
 
@@ -389,7 +389,7 @@ const TasksModule = {
         // Populate stopwatch dropdown
         if (stopwatchSelect) {
             const stopwatches = StorageManager.getStopwatches().filter(
-                s => !s.deleted && s.id !== 'waste-time-builtin'
+                s => !s.deleted && s.id !== 'waste-time-builtin' && !s.isBuiltIn
             );
             stopwatchSelect.innerHTML = `
                 <option value="">— Select stopwatch —</option>
@@ -545,7 +545,7 @@ const TasksModule = {
         if (!select) return;
 
         const stopwatches = StorageManager.getStopwatches().filter(
-            s => !s.deleted && s.id !== 'waste-time-builtin'
+            s => !s.deleted && s.id !== 'waste-time-builtin' && !s.isBuiltIn
         );
 
         const placeholder = select.options[0]?.text || '— Select stopwatch —';

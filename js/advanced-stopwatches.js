@@ -9,8 +9,8 @@
  * - Built-in clocks: Tracked Time, Break Time, Untracked Time (auto-managed, no user controls)
  */
 
-// Built-in auto-idle stopwatch ID (runs when no productive or break stopwatch is active)
-const WASTE_TIME_ID = 'untracked';
+// Built-in auto-idle stopwatch ID (runs when no productive stopwatch is active)
+const WASTE_TIME_ID = 'break-time';
 
 const AdvancedStopwatchesModule = {
     elements: {
@@ -169,15 +169,15 @@ const AdvancedStopwatchesModule = {
         }
     },
 
-    // Ensure the built-in Waste Time stopwatch exists
+    // Ensure the built-in Break Time stopwatch exists (auto-runs when idle)
     ensureWasteTimeExists() {
         let wasteTime = this.stopwatches.find(sw => sw.id === WASTE_TIME_ID);
 
         if (!wasteTime) {
             wasteTime = {
                 id: WASTE_TIME_ID,
-                name: 'Untracked Time',
-                color: '#6b7280',
+                name: 'Break Time',
+                color: '#f38ba8',
                 goalMs: 2 * 60 * 60 * 1000,
                 goalDirection: 'minimize',
                 displayMode: 'circular',
@@ -190,7 +190,7 @@ const AdvancedStopwatchesModule = {
             };
             this.stopwatches.push(wasteTime);
             StorageManager.addStopwatch(wasteTime);
-            console.log('Created built-in Untracked Time stopwatch');
+            console.log('Created built-in Break Time stopwatch');
         }
     },
 

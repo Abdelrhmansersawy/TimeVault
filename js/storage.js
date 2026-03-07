@@ -178,40 +178,28 @@ const StorageManager = {
     getStopwatches() {
         let stopwatches = this.get(this.KEYS.STOPWATCHES, []);
 
-        // Ensure Break Time always exists
-        if (!stopwatches.find(sw => sw.id === 'break-time')) {
-            stopwatches.unshift({
-                id: 'break-time',
-                name: 'Break Time',
-                color: '#f38ba8', // Pink color for breaks
-                icon: 'coffee',
-                order: -2,
-                isBuiltIn: true
-            });
-        }
+        // Remove legacy 'waste-time-builtin' entries (merged into break-time)
+        stopwatches = stopwatches.filter(sw => sw.id !== 'waste-time-builtin');
 
-        // Ensure Untracked Time always exists
-        if (!stopwatches.find(sw => sw.id === 'untracked')) {
-            stopwatches.unshift({
-                id: 'untracked',
-                name: 'Untracked Time',
-                color: '#6b7280', // Grey color for untracked
-                icon: 'activity',
-                order: -1,
-                isBuiltIn: true
-            });
-        }
+        // Built-in definitions: these ALWAYS override stored properties
+        const builtInDefs = {
+            'break-time': { name: 'Break Time', color: '#f38ba8', icon: 'coffee', order: -2, isBuiltIn: true },
+            'untracked': { name: 'Untracked Time', color: '#6b7280', icon: 'activity', order: -1, isBuiltIn: true },
+            'tracked-time': { name: 'Tracked Time', color: '#6366f1', icon: 'check-circle', order: -3, isBuiltIn: true }
+        };
 
-        // Ensure Tracked Time always exists
-        if (!stopwatches.find(sw => sw.id === 'tracked-time')) {
-            stopwatches.unshift({
-                id: 'tracked-time',
-                name: 'Tracked Time',
-                color: '#6366f1', // Accent color for tracked
-                icon: 'check-circle',
-                order: -3, // Keep it at the very top
-                isBuiltIn: true
-            });
+        // Force-patch existing built-in entries (fixes old data missing isBuiltIn flag)
+        stopwatches.forEach(sw => {
+            if (builtInDefs[sw.id]) {
+                Object.assign(sw, builtInDefs[sw.id]);
+            }
+        });
+
+        // Inject any missing built-in entries
+        for (const [id, def] of Object.entries(builtInDefs)) {
+            if (!stopwatches.find(sw => sw.id === id)) {
+                stopwatches.unshift({ id, ...def });
+            }
         }
 
         return stopwatches;
