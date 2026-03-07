@@ -185,9 +185,9 @@ const TasksModule = {
                  draggable="true">
                 <button class="board-task-check ${isDone ? 'checked' : ''}" data-check-task="${task.id}">
                     ${isDone
-                        ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>`
-                        : `<span class="board-task-circle" style="border-color:${sw.color}"></span>`
-                    }
+                ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>`
+                : `<span class="board-task-circle" style="border-color:${sw.color}"></span>`
+            }
                 </button>
                 <div class="board-task-body" data-edit-task="${task.id}">
                     <div class="board-task-title-row">
@@ -230,6 +230,12 @@ const TasksModule = {
                     const newStatus = task.status === 'done' ? 'todo' : 'done';
                     StorageManager.updateTask(id, { status: newStatus });
                     this.render();
+
+                    // Auto-stop active timer if the completed task was running
+                    if (newStatus === 'done' && typeof DailysModule !== 'undefined' &&
+                        DailysModule.activeTimer && DailysModule.activeTimer.taskName === task.title) {
+                        DailysModule.stopCurrentTimer();
+                    }
                 }
             });
         });

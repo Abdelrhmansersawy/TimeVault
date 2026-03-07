@@ -198,6 +198,7 @@ const DailysModule = {
      * Format duration in ms to a readable short form: "1h 23m"
      */
     formatDurationShort(ms) {
+        if (ms < 0) return `-${this.formatDurationShort(-ms)}`;
         const totalMinutes = Math.floor(ms / 60000);
         const hours = Math.floor(totalMinutes / 60);
         const minutes = totalMinutes % 60;
@@ -356,6 +357,10 @@ const DailysModule = {
 
         if (!silent) {
             App.showToast(wasBreak ? 'Break ended' : 'Task stopped');
+            if (!wasBreak) {
+                // Auto-start break when finishing a productive task
+                setTimeout(() => this.startBreak(), 0);
+            }
         }
     },
 
@@ -1082,6 +1087,12 @@ const DailysModule = {
 
         StorageManager.saveDailyEntry(dateStr, entry);
         StorageManager.updateTask(taskId, { status: 'done' });
+
+        // Auto-stop active timer if the completed task was running
+        const task = StorageManager.getTasks().find(t => t.id === taskId);
+        if (task && this.activeTimer && this.activeTimer.taskName === task.title) {
+            this.stopCurrentTimer(); // This will auto-start a break
+        }
 
         this.render();
 
