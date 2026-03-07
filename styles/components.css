@@ -18,6 +18,8 @@
     cursor: pointer;
     transition: all var(--transition-base);
     white-space: nowrap;
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-primary);
 }
 
 .btn:disabled {

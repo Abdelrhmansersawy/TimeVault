@@ -137,7 +137,7 @@ const App = {
     },
 
     setupTabVisibility() {
-        const defaultOrder = ['timelog', 'stopwatches', 'clock', 'tasks', 'dailys', 'habits', 'graphs'];
+        const defaultOrder = ['timelog', 'tasks', 'dailys', 'stopwatches', 'clock', 'habits', 'graphs'];
         const labels = {
             'timelog': 'Log', 'stopwatches': 'Focus', 'clock': 'Clock',
             'tasks': 'Tasks', 'dailys': 'Daily', 'habits': 'Habits', 'graphs': 'Graphs'

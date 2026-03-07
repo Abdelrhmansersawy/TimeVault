@@ -182,6 +182,10 @@ def main():
     
     args = parser.parse_args()
     
+    if args.command is None:
+        parser.print_help()
+        return
+
     if args.command == "status":
         cmd_status()
     elif args.command == "start":
