@@ -255,7 +255,10 @@ const App = {
             clearTimeout(idleTimeout);
             idleTimeout = setTimeout(() => {
                 if (typeof DailysModule !== 'undefined' && DailysModule.startBreak) {
-                    if (!DailysModule.activeTimer || !DailysModule.activeTimer.isBreak) {
+                    // Only start untracked time if NO timer is currently running.
+                    // Previously this also triggered when a task timer was active
+                    // (isBreak=false), which would stop the task and override it.
+                    if (!DailysModule.activeTimer) {
                         DailysModule.startBreak("Untracked Time");
                         App.showToast("Started untracked time due to 5s inactivity");
                     }
