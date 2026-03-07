@@ -1,0 +1,199 @@
+#!/usr/bin/env python3
+import os
+import json
+import argparse
+import time
+from datetime import datetime
+
+DB_FILE = os.path.expanduser("~/.timevault/timevault-db.json")
+
+def load_db():
+    if not os.path.exists(DB_FILE):
+        return {}
+    with open(DB_FILE, 'r') as f:
+        try:
+            return json.load(f)
+        except json.JSONDecodeError:
+            return {}
+
+def save_db(data):
+    # Atomic write
+    tmp_file = DB_FILE + ".tmp"
+    with open(tmp_file, 'w') as f:
+        json.dump(data, f, indent=2)
+    os.replace(tmp_file, DB_FILE)
+
+def get_date_str(dt=None):
+    if dt is None:
+        dt = datetime.now()
+    return dt.strftime('%Y-%m-%d')
+
+def cmd_status():
+    data = load_db()
+    active = data.get('focusclock_active_timer')
+    
+    if not active:
+        print("🔴 No timer currently running.")
+        return
+
+    name = active.get('taskName', 'Unknown Task')
+    is_break = active.get('isBreak', False)
+    start = active.get('startTime', 0)
+    
+    elapsed_ms = int(time.time() * 1000) - start
+    elapsed_m = int(elapsed_ms / 60000)
+    
+    if is_break:
+        print(f"☕ On Break: {name} (Started {elapsed_m}m ago)")
+    else:
+        print(f"🟢 Active Task: {name} (Running for {elapsed_m}m)")
+
+def cmd_start(task_name):
+    data = load_db()
+    now_ms = int(time.time() * 1000)
+    date_str = get_date_str()
+    
+    # Check if a timer is already running
+    active = data.get('focusclock_active_timer')
+    if active:
+        print("Stopping current timer first...")
+        _stop_timer(data, now_ms)
+        
+    data['focusclock_active_timer'] = {
+        'taskName': task_name,
+        'startTime': now_ms,
+        'isBreak': False,
+        'dateStr': date_str
+    }
+    save_db(data)
+    print(f"🟢 Started tracking: {task_name}")
+
+def cmd_break(break_name="Break"):
+    data = load_db()
+    now_ms = int(time.time() * 1000)
+    date_str = get_date_str()
+    
+    active = data.get('focusclock_active_timer')
+    if active:
+        print("Stopping current timer first...")
+        _stop_timer(data, now_ms)
+        
+    data['focusclock_active_timer'] = {
+        'taskName': break_name,
+        'startTime': now_ms,
+        'isBreak': True,
+        'dateStr': date_str
+    }
+    save_db(data)
+    print(f"☕ Started break: {break_name}")
+
+def _stop_timer(data, end_time_ms):
+    active = data.get('focusclock_active_timer')
+    if not active:
+        return
+        
+    date_str = active.get('dateStr', get_date_str())
+    
+    # Load Daily Entry
+    dailys_key = 'focusclock_dailys'
+    dailys = data.get(dailys_key, {})
+    if isinstance(dailys, str): # handle double encoded strings
+        dailys = json.loads(dailys)
+        
+    entry = dailys.get(date_str, {
+        "routine": [], "plannedTaskIds": [], "completedTaskIds": [], "timeLog": []
+    })
+    
+    # Append to timeLog
+    if not isinstance(entry.get('timeLog'), list):
+        entry['timeLog'] = []
+        
+    entry['timeLog'].append({
+        'id': f"log_{int(time.time() * 1000)}",
+        'taskName': active['taskName'],
+        'startTime': active['startTime'],
+        'endTime': end_time_ms,
+        'isBreak': active.get('isBreak', False)
+    })
+    
+    dailys[date_str] = entry
+    data[dailys_key] = dailys
+    
+    # Clear active
+    data['focusclock_active_timer'] = None
+
+def cmd_stop():
+    data = load_db()
+    if not data.get('focusclock_active_timer'):
+        print("🔴 No timer currently running.")
+        return
+        
+    now_ms = int(time.time() * 1000)
+    _stop_timer(data, now_ms)
+    save_db(data)
+    print("🛑 Timer stopped.")
+
+def cmd_tasks():
+    data = load_db()
+    tasks_raw = data.get('focusclock_tasks', [])
+    if isinstance(tasks_raw, str):
+        try:
+            tasks_raw = json.loads(tasks_raw)
+        except:
+            tasks_raw = []
+            
+    if not tasks_raw:
+        print("No tasks found.")
+        return
+        
+    print("=== TimeVault Tasks ===")
+    todo = [t for t in tasks_raw if t.get('status') == 'todo']
+    in_progress = [t for t in tasks_raw if t.get('status') == 'in-progress']
+    done = [t for t in tasks_raw if t.get('status') == 'done']
+    
+    print("\n--- To Do ---")
+    for t in todo:
+        print(f" [ ] {t.get('title')}")
+        
+    print("\n--- In Progress ---")
+    for t in in_progress:
+        print(f" [/] {t.get('title')}")
+
+def main():
+    parser = argparse.ArgumentParser(description="TimeVault Command Line Interface")
+    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+    
+    # Status
+    subparsers.add_parser("status", help="Show current timer status")
+    
+    # Start
+    start_p = subparsers.add_parser("start", help="Start a new task timer")
+    start_p.add_argument("task_name", type=str, help="Name of the task")
+    
+    # Break
+    break_p = subparsers.add_parser("break", help="Start a break timer")
+    break_p.add_argument("break_name", type=str, nargs="?", default="Break", help="Optional name of the break")
+    
+    # Stop
+    subparsers.add_parser("stop", help="Stop the current timer")
+    
+    # Tasks
+    subparsers.add_parser("tasks", help="List all tasks from the Kanban board")
+    
+    args = parser.parse_args()
+    
+    if args.command == "status":
+        cmd_status()
+    elif args.command == "start":
+        cmd_start(args.task_name)
+    elif args.command == "break":
+        cmd_break(args.break_name)
+    elif args.command == "stop":
+        cmd_stop()
+    elif args.command == "tasks":
+        cmd_tasks()
+    else:
+        parser.print_help()
+
+if __name__ == "__main__":
+    main()
