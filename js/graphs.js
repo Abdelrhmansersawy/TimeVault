@@ -15,6 +15,10 @@ const GraphsModule = {
     elements: {
         container: null,
         globalOverview: null,
+        dashboard: null,
+        dashboardStats: null,
+        distributionDoughnut: null,
+        distributionLegend: null,
         emptyState: null,
         rangeSelect: null,
         showDeletedToggle: null,
@@ -33,6 +37,10 @@ const GraphsModule = {
     init() {
         this.elements.container = document.getElementById('graphs-container');
         this.elements.globalOverview = document.getElementById('global-overview-container');
+        this.elements.dashboard = document.getElementById('graphs-dashboard');
+        this.elements.dashboardStats = document.getElementById('graphs-stats-row');
+        this.elements.distributionDoughnut = document.getElementById('distribution-doughnut');
+        this.elements.distributionLegend = document.getElementById('distribution-legend');
         this.elements.emptyState = document.getElementById('no-graphs');
         this.elements.rangeSelect = document.getElementById('graphs-range');
         this.elements.showDeletedToggle = document.getElementById('show-deleted-graphs');
@@ -82,6 +90,7 @@ const GraphsModule = {
         if (displayStopwatches.length === 0) {
             this.elements.container.innerHTML = '';
             this.elements.globalOverview.innerHTML = '';
+            if (this.elements.dashboard) this.elements.dashboard.style.display = 'none';
             this.elements.emptyState.style.display = 'flex';
             return;
         }
@@ -93,6 +102,9 @@ const GraphsModule = {
         const displayDates = this.zoomRange
             ? dates.filter(d => d >= this.zoomRange.startDate && d <= this.zoomRange.endDate)
             : dates;
+
+        // Render Top-Level Dashboard (Stats & Doughnut)
+        this.renderTopLevelDashboard(displayStopwatches, history, displayDates);
 
         // Render global overview (uses global range)
         this.renderGlobalOverview(displayStopwatches, history, displayDates);
@@ -114,6 +126,126 @@ const GraphsModule = {
 
         // REQ-7: Add per-category range change listeners
         this.addCategoryRangeListeners();
+    },
+
+    /**
+     * Renders the Top-Level Dashboard: Overall Stats and Doughnut Chart
+     */
+    renderTopLevelDashboard(stopwatches, history, dates) {
+        if (!this.elements.dashboard) return;
+        this.elements.dashboard.style.display = 'block';
+
+        const visibleStopwatches = stopwatches.filter(sw => !this.hiddenCategories.has(sw.id));
+
+        // 1. Calculate Aggregate Stats
+        let totalMsAllStopwatches = 0;
+        let dataByStopwatch = [];
+
+        visibleStopwatches.forEach(sw => {
+            const swHistory = history.filter(h => h.stopwatchId === sw.id && dates.includes(h.date));
+            const swTotalMs = swHistory.reduce((sum, h) => sum + h.totalMs, 0);
+            if (swTotalMs > 0) {
+                totalMsAllStopwatches += swTotalMs;
+                dataByStopwatch.push({ ...sw, totalMs: swTotalMs });
+            }
+        });
+
+        // Calculate Daily Average
+        const daysCount = Math.max(dates.length, 1);
+        const avgMsPerDay = totalMsAllStopwatches / daysCount;
+
+        // Populate Stats Row
+        if (this.elements.dashboardStats) {
+            this.elements.dashboardStats.innerHTML = `
+                <div class="graph-card" style="padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <span style="color: var(--color-text-muted); font-size: 14px; margin-bottom: 8px;">Total Tracked Time</span>
+                    <span style="font-size: 28px; font-weight: 600; color: var(--color-text);">${formatTimeShort(totalMsAllStopwatches)}</span>
+                </div>
+                <div class="graph-card" style="padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <span style="color: var(--color-text-muted); font-size: 14px; margin-bottom: 8px;">Daily Average</span>
+                    <span style="font-size: 28px; font-weight: 600; color: var(--color-text);">${formatTimeShort(avgMsPerDay)}</span>
+                </div>
+                <div class="graph-card" style="padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <span style="color: var(--color-text-muted); font-size: 14px; margin-bottom: 8px;">Active Categories</span>
+                    <span style="font-size: 28px; font-weight: 600; color: var(--color-text);">${dataByStopwatch.length} / ${stopwatches.length}</span>
+                </div>
+            `;
+        }
+
+        // 2. Render Doughnut Chart
+        if (this.elements.distributionDoughnut && this.elements.distributionLegend) {
+            if (dataByStopwatch.length === 0) {
+                this.elements.distributionDoughnut.innerHTML = '<text x="100" y="100" text-anchor="middle" fill="var(--color-text-muted)" font-size="14">No Data in Range</text>';
+                this.elements.distributionLegend.innerHTML = '';
+                return;
+            }
+
+            // Sort by largest time first
+            dataByStopwatch.sort((a, b) => b.totalMs - a.totalMs);
+
+            let cumulativePercent = 0;
+            let svgPaths = '';
+            let legendHtml = '';
+            const cx = 100, cy = 100, radius = 80, innerRadius = 50;
+
+            const getCoordinatesForPercent = (percent) => {
+                const x = cx + radius * Math.cos(2 * Math.PI * percent);
+                const y = cy + radius * Math.sin(2 * Math.PI * percent);
+                return [x, y];
+            };
+
+            const getInnerCoordinatesForPercent = (percent) => {
+                const x = cx + innerRadius * Math.cos(2 * Math.PI * percent);
+                const y = cy + innerRadius * Math.sin(2 * Math.PI * percent);
+                return [x, y];
+            };
+
+            dataByStopwatch.forEach((sw) => {
+                const slicePercent = sw.totalMs / totalMsAllStopwatches;
+                const [startX, startY] = getCoordinatesForPercent(cumulativePercent);
+                const [innerStartX, innerStartY] = getInnerCoordinatesForPercent(cumulativePercent);
+
+                cumulativePercent += slicePercent;
+
+                const [endX, endY] = getCoordinatesForPercent(cumulativePercent);
+                const [innerEndX, innerEndY] = getInnerCoordinatesForPercent(cumulativePercent);
+
+                // If value > 50%, largeArcFlag = 1
+                const largeArcFlag = slicePercent > 0.5 ? 1 : 0;
+
+                // Doughnut Path (Outer Arc -> Inner Arc -> Close)
+                // If it's a full 100% circle, we need two arcs because SVG can't draw a full circle with exactly one arc
+                if (slicePercent === 1) {
+                    svgPaths += `
+                        <circle cx="${cx}" cy="${cy}" r="${radius}" fill="none" stroke="${sw.color || '#6366f1'}" stroke-width="${radius - innerRadius}" />
+                    `;
+                } else {
+                    const pathData = [
+                        `M ${startX} ${startY}`,
+                        `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${endX} ${endY}`,
+                        `L ${innerEndX} ${innerEndY}`,
+                        `A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 0 ${innerStartX} ${innerStartY}`,
+                        `Z`
+                    ].join(' ');
+
+                    svgPaths += `<path d="${pathData}" fill="${sw.color || '#6366f1'}" />`;
+                }
+
+                legendHtml += `
+                    <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; margin-right: 8px;">
+                        <span style="display:inline-block; width:12px; height:12px; border-radius:3px; background:${sw.color || '#6366f1'}"></span>
+                        <span style="color:var(--color-text);">${this.escapeHtml(sw.name)} (${Math.round(slicePercent * 100)}%)</span>
+                    </div>
+                `;
+            });
+
+            this.elements.distributionDoughnut.innerHTML = svgPaths + `
+                <text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="middle" font-size="16" font-weight="600" fill="var(--color-text)">
+                    ${formatTimeShort(totalMsAllStopwatches)}
+                </text>
+            `;
+            this.elements.distributionLegend.innerHTML = legendHtml;
+        }
     },
 
     renderGlobalOverview(stopwatches, history, dates) {
@@ -405,71 +537,37 @@ const GraphsModule = {
         }).join('');
 
         return `
-            <div class="graph-card ${sw.deleted ? 'deleted' : ''}" data-graph-id="${sw.id}">
-                <div class="graph-header">
-                    <div class="graph-color-indicator" style="background: ${sw.color || '#6366f1'};"></div>
-                    <span class="graph-title">${this.escapeHtml(sw.name)}</span>
-                    ${directionBadge}
+            <div class="graph-card graph-card-mini ${sw.deleted ? 'deleted' : ''}" data-graph-id="${sw.id}" style="padding: 16px; border-radius: 12px; display: flex; flex-direction: column;">
+                <div class="graph-header" style="margin-bottom: 12px; padding: 0;">
+                    <div class="graph-color-indicator" style="background: ${sw.color || '#6366f1'}; width: 12px; height: 12px; border-radius: 4px;"></div>
+                    <span class="graph-title" style="font-size: 15px; font-weight: 500;">${this.escapeHtml(sw.name)}</span>
                     ${sw.deleted ? '<span class="graph-deleted-badge">Deleted</span>' : ''}
-                    <select class="category-range-select select-input" data-graph-id="${sw.id}" style="margin-left: auto;">
+                    <select class="category-range-select select-input" data-graph-id="${sw.id}" style="margin-left: auto; padding: 2px 6px; font-size: 11px;">
                         ${rangeOptions}
                     </select>
                 </div>
                 
-                <div class="graph-container">
+                <div class="graph-stats-mini" style="display: flex; gap: 16px; margin-bottom: 16px;">
+                    <div style="display: flex; flex-direction: column;">
+                        <span style="font-size: 11px; color: var(--color-text-muted);">Total</span>
+                        <span style="font-size: 16px; font-weight: 600;">${formatTimeShort(totalMs)}</span>
+                    </div>
+                    <div style="display: flex; flex-direction: column;">
+                        <span style="font-size: 11px; color: var(--color-text-muted);">Average</span>
+                        <span style="font-size: 16px; font-weight: 600;">${formatTimeShort(avgMs)}</span>
+                    </div>
+                    <div style="display: flex; flex-direction: column;">
+                        <span style="font-size: 11px; color: var(--color-text-muted);">Goal Reached</span>
+                        <span style="font-size: 16px; font-weight: 600; color: var(--color-success);">${goalReachedPercent}%</span>
+                    </div>
+                </div>
+
+                <div class="graph-container" style="flex: 1; min-height: 80px; padding: 0;">
                     ${this.chartType === 'bar'
                 ? this.renderBarChart(data, Math.max(...data.map(d => d.value), 1), sw.color || '#6366f1', goalMs, isMinimize)
                 : this.renderLineChart(data, Math.max(...data.map(d => d.value), 1), sw.color || '#6366f1', goalMs, isMinimize)}
                     <div class="graph-tooltip" id="tooltip-${sw.id}"></div>
                 </div>
-
-                <div class="graph-stats-extended">
-                    <div class="graph-stat">
-                        <span class="graph-stat-label">Total</span>
-                        <span class="graph-stat-value">${formatTimeShort(totalMs)}</span>
-                    </div>
-                    <div class="graph-stat">
-                        <span class="graph-stat-label">Average</span>
-                        <span class="graph-stat-value">${formatTimeShort(avgMs)}</span>
-                    </div>
-                    <div class="graph-stat">
-                        <span class="graph-stat-label">${isMinimize ? 'Best Day (Min)' : 'Best Day'}</span>
-                        <span class="graph-stat-value">${formatTimeShort(bestDayValue)}</span>
-                    </div>
-                    <div class="graph-stat">
-                        <span class="graph-stat-label">Goal Reached</span>
-                        <span class="graph-stat-value graph-stat-success">${goalReachedPercent}%</span>
-                    </div>
-                    <div class="graph-stat">
-                        <span class="graph-stat-label">${nearGoalLabel}</span>
-                        <span class="graph-stat-value graph-stat-warning">${closeToGoalPercent}%</span>
-                    </div>
-                </div>
-                
-                ${sessionAnalytics.sessionCount > 0 ? `
-                <div class="graph-stats-session">
-                    <div class="graph-stat">
-                        <span class="graph-stat-label">Sessions</span>
-                        <span class="graph-stat-value">${sessionAnalytics.sessionCount}</span>
-                    </div>
-                    <div class="graph-stat">
-                        <span class="graph-stat-label">Avg Session</span>
-                        <span class="graph-stat-value">${formatTimeShort(sessionAnalytics.avgSessionMs)}</span>
-                    </div>
-                    <div class="graph-stat">
-                        <span class="graph-stat-label">Longest</span>
-                        <span class="graph-stat-value">${formatTimeShort(sessionAnalytics.longestSessionMs)}</span>
-                    </div>
-                    <div class="graph-stat">
-                        <span class="graph-stat-label">Most Active Hour</span>
-                        <span class="graph-stat-value">${sessionAnalytics.mostActiveHour}</span>
-                    </div>
-                    <div class="graph-stat">
-                        <span class="graph-stat-label">Most Active Day</span>
-                        <span class="graph-stat-value">${sessionAnalytics.mostActiveDay}</span>
-                    </div>
-                </div>
-                ` : ''}
             </div>
         `;
     },
@@ -522,30 +620,28 @@ const GraphsModule = {
     },
 
     renderBarChart(data, maxValue, color, goalMs, isMinimize = false) {
-        const chartWidth = 700;
-        const chartHeight = 150;
-        const barPadding = 4;
-        const barWidth = (chartWidth / data.length) - barPadding;
-        const maxBarHeight = chartHeight - 35;
+        const chartWidth = 350; // Sparkline width
+        const chartHeight = 80; // Sparkline height
+        const barPadding = 2;
+        const barWidth = (chartWidth / Math.max(data.length, 1)) - barPadding;
+        const maxBarHeight = chartHeight - 15;
 
         // Calculate goal line position
-        const goalY = maxValue > 0 ? chartHeight - 25 - (goalMs / maxValue) * maxBarHeight : chartHeight - 25;
-        const showGoalLine = goalMs <= maxValue * 1.2; // Only show if goal is within reasonable range
+        const goalY = maxValue > 0 ? chartHeight - 15 - (goalMs / maxValue) * maxBarHeight : chartHeight - 15;
+        const showGoalLine = goalMs <= maxValue * 1.5;
 
         let bars = '';
         data.forEach((d, i) => {
             const barHeight = maxValue > 0 ? (d.value / maxValue) * maxBarHeight : 0;
             const x = i * (barWidth + barPadding) + barPadding / 2;
-            const y = chartHeight - barHeight - 25;
+            const y = chartHeight - barHeight - 15;
 
             // Determine goal achievement class based on direction
             let goalClass = 'goal-below';
             if (isMinimize) {
-                // For minimize: below or at goal is good
                 if (d.value > 0 && d.value <= goalMs) goalClass = 'goal-met';
                 else if (d.value <= goalMs * 1.2) goalClass = 'goal-close';
             } else {
-                // For maximize: at or above goal is good
                 if (d.value >= goalMs) goalClass = 'goal-met';
                 else if (d.value >= goalMs * 0.8) goalClass = 'goal-close';
             }
@@ -555,9 +651,9 @@ const GraphsModule = {
                     class="graph-bar ${goalClass}" 
                     x="${x}" 
                     y="${y}" 
-                    width="${barWidth}"
+                    width="${Math.max(barWidth, 1)}"
                     height="${barHeight}"
-                    rx="4"
+                    rx="2"
                     data-date="${d.date}"
                     data-value="${d.value}"
                     style="fill: ${color};"
@@ -569,57 +665,37 @@ const GraphsModule = {
         let goalLine = '';
         if (showGoalLine && goalMs > 0) {
             goalLine = `
-                <line class="goal-line" x1="0" y1="${goalY}" x2="${chartWidth}" y2="${goalY}" />
-                <text class="goal-label" x="${chartWidth - 5}" y="${goalY - 5}" text-anchor="end">
-                    Goal: ${formatTimeShort(goalMs)}
-                </text>
+                <line class="goal-line" x1="0" y1="${goalY}" x2="${chartWidth}" y2="${goalY}" stroke-dasharray="2,2" />
             `;
         }
 
-        // X-axis labels
-        let labels = '';
-        const labelInterval = this.getXAxisInterval(data.length);
-        data.forEach((d, i) => {
-            if (i % labelInterval === 0 || i === data.length - 1) {
-                const x = i * (barWidth + barPadding) + barPadding / 2 + barWidth / 2;
-                labels += `
-                    <text class="graph-axis-label" x="${x}" y="${chartHeight - 5}"
-                        text-anchor="middle" style="font-size: 11px; fill: #606070;">
-                        ${this.formatDateLabel(d.date)}
-                    </text>
-                `;
-            }
-        });
-
-        const yAxis = `<line class="graph-axis-line" x1="0" y1="${chartHeight - 25}" x2="${chartWidth}" y2="${chartHeight - 25}" style="stroke: rgba(255,255,255,0.1); stroke-width: 1;" />`;
+        const yAxis = `<line class="graph-axis-line" x1="0" y1="${chartHeight - 15}" x2="${chartWidth}" y2="${chartHeight - 15}" style="stroke: rgba(255,255,255,0.1); stroke-width: 1;" />`;
 
         return `
-            <svg class="graph-svg" viewBox="0 0 ${chartWidth} ${chartHeight}" preserveAspectRatio="xMidYMid meet" style="width: 100%; height: 180px;">
+            <svg class="graph-svg" viewBox="0 0 ${chartWidth} ${chartHeight}" preserveAspectRatio="none" style="width: 100%; height: 100%; display: block;">
                 ${yAxis}
                 ${goalLine}
                 ${bars}
-                ${labels}
             </svg>
         `;
     },
 
     renderLineChart(data, maxValue, color, goalMs, isMinimize = false) {
-        const chartWidth = 700;
-        const chartHeight = 150;
-        const padding = { top: 10, right: 10, bottom: 25, left: 10 };
+        const chartWidth = 350;
+        const chartHeight = 80;
+        const padding = { top: 5, right: 5, bottom: 5, left: 5 };
         const plotWidth = chartWidth - padding.left - padding.right;
         const plotHeight = chartHeight - padding.top - padding.bottom;
 
         // Calculate goal line position
         const goalY = maxValue > 0 ? padding.top + plotHeight - (goalMs / maxValue) * plotHeight : padding.top + plotHeight;
-        const showGoalLine = goalMs <= maxValue * 1.2;
+        const showGoalLine = goalMs <= maxValue * 1.5;
 
         // Generate path points
         const points = data.map((d, i) => {
             const x = padding.left + (i / Math.max(data.length - 1, 1)) * plotWidth;
             const y = padding.top + plotHeight - (maxValue > 0 ? (d.value / maxValue) * plotHeight : 0);
 
-            // Goal class based on direction
             let goalClass = 'goal-below';
             if (isMinimize) {
                 if (d.value > 0 && d.value <= goalMs) goalClass = 'goal-met';
@@ -628,9 +704,10 @@ const GraphsModule = {
                 if (d.value >= goalMs) goalClass = 'goal-met';
                 else if (d.value >= goalMs * 0.8) goalClass = 'goal-close';
             }
-
             return { x, y, date: d.date, value: d.value, goalClass };
         });
+
+        if (points.length === 0) return '';
 
         // Area fill
         const areaPath = `M ${points[0].x} ${padding.top + plotHeight} ` +
@@ -640,56 +717,32 @@ const GraphsModule = {
         // Line path
         const linePath = `M ${points.map(p => `${p.x} ${p.y}`).join(' L ')}`;
 
-        // Data points - REQ-3: Only show marker for the most recent data point
-        let circles = '';
-        if (points.length > 0) {
-            const lastPoint = points[points.length - 1];
-            circles = `
-                <circle class="graph-point ${lastPoint.goalClass}" 
-                    cx="${lastPoint.x}" cy="${lastPoint.y}" r="5" 
-                    stroke="${color}"
-                    data-date="${lastPoint.date}"
-                    data-value="${lastPoint.value}"
-                />
-            `;
-        }
-
         // Goal line
         let goalLine = '';
         if (showGoalLine && goalMs > 0) {
             goalLine = `
-                <line class="goal-line" x1="0" y1="${goalY}" x2="${chartWidth}" y2="${goalY}" />
-                <text class="goal-label" x="${chartWidth - 5}" y="${goalY - 5}" text-anchor="end">
-                    Goal: ${formatTimeShort(goalMs)}
-                </text>
+                <line class="goal-line" x1="0" y1="${goalY}" x2="${chartWidth}" y2="${goalY}" stroke-dasharray="2,2" />
             `;
         }
 
-        // X-axis labels
-        let labels = '';
-        const labelInterval = this.getXAxisInterval(data.length);
-        data.forEach((d, i) => {
-            if (i % labelInterval === 0 || i === data.length - 1) {
-                const x = padding.left + (i / Math.max(data.length - 1, 1)) * plotWidth;
-                labels += `
-                    <text class="graph-axis-label" x="${x}" y="${chartHeight - 5}"
-                        text-anchor="middle" style="font-size: 11px; fill: #606070;">
-                        ${this.formatDateLabel(d.date)}
-                    </text>
-                `;
-            }
-        });
-
-        const yAxis = `<line class="graph-axis-line" x1="0" y1="${padding.top + plotHeight}" x2="${chartWidth}" y2="${padding.top + plotHeight}" style="stroke: rgba(255,255,255,0.1); stroke-width: 1;" />`;
+        // Data points (render transparent larger circles for easier hover detection)
+        let hoverPoints = points.map(p => `
+            <circle class="graph-point ${p.goalClass}" 
+                cx="${p.x}" cy="${p.y}" r="6" 
+                stroke="transparent" fill="transparent"
+                style="pointer-events:all;"
+                data-date="${p.date}"
+                data-value="${p.value}"
+            />
+            <circle cx="${p.x}" cy="${p.y}" r="2" fill="${color}" style="pointer-events:none;" />
+        `).join('');
 
         return `
-            <svg class="graph-svg" viewBox="0 0 ${chartWidth} ${chartHeight}" preserveAspectRatio="xMidYMid meet" style="width: 100%; height: 180px;">
-                ${yAxis}
+            <svg class="graph-svg" viewBox="0 0 ${chartWidth} ${chartHeight}" preserveAspectRatio="none" style="width: 100%; height: 100%; display: block; overflow: visible;">
                 ${goalLine}
-                <path class="graph-area" d="${areaPath}" fill="${color}" />
-                <path class="graph-line" d="${linePath}" stroke="${color}" />
-                ${circles}
-                ${labels}
+                <path class="graph-area" d="${areaPath}" fill="${color}" style="opacity: 0.2;" />
+                <path class="graph-line" d="${linePath}" stroke="${color}" stroke-width="2" fill="none" />
+                ${hoverPoints}
             </svg>
         `;
     },

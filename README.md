@@ -35,6 +35,7 @@ Track your time, manage tasks, and reflect on your daily progress – all in one
 - Vanilla JavaScript (ES6+)
 - Python 3 (Lightweight REST Server & CLI `timevault_cli`)
 - LocalStorage coupled with `~/.timevault/timevault-db.json` for persistence
+- **Obsidian Vault** synchronization
 
 ## Getting Started
 
