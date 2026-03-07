@@ -39,46 +39,49 @@ Track your time, manage tasks, and reflect on your daily progress – all in one
 
 ## Getting Started
 
-### Quick Install (Recommended for Linux/macOS)
-You can install TimeVault globally on your system with a single command:
+### 🐧 Linux & macOS
+
+**Option 1: Quick Install (Recommended)**
+Install TimeVault system-wide with a single command:
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Abdelrhmansersawy/TimeVault/main/install.sh | bash
 ```
-*This downloads the application to `~/.timevault` and creates a symlink in `~/.local/bin` so you can use the `timevault` command everywhere.*
-*(Note: Windows users can use Windows Subsystem for Linux (WSL) to use the bash script).*
+*This downloads the application to `~/.timevault` and creates a symlink in `~/.local/bin` so you can use the `timevault` CLI command anywhere.*
 
-### Windows Installation (Native)
-If you prefer not to use WSL, you can run the Python server directly on Windows:
+**Option 2: Manual Install**
+If you prefer to install manually:
+```bash
+git clone https://github.com/Abdelrhmansersawy/TimeVault.git
+cd TimeVault
+./timevault install
+```
+
+**Running the App:**
+Once installed, simply type:
+```bash
+timevault open
+```
+*(If you didn't run the install step, navigate to the folder and use `./timevault open` instead).*
+
+---
+
+### 🪟 Windows
+
+Windows does not natively support the bash installation scripts unless you use WSL (Windows Subsystem for Linux). If you want to run TimeVault natively on Windows, follow these steps:
+
 1. Clone the repository:
    ```cmd
    git clone https://github.com/Abdelrhmansersawy/TimeVault.git
    cd TimeVault
    ```
-2. Start the backend server:
+2. Start the backend Python server:
    ```cmd
    python server.py
    ```
-3. Open your browser and navigate to `http://localhost:51888`
-*(To use the terminal CLI natively on Windows, open a new Command Prompt in the folder and run `python timevault_cli [command]`).*
+3. Open your browser and navigate to:
+   `http://localhost:51888`
 
-### Manual Install
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/Abdelrhmansersawy/TimeVault.git
-   cd TimeVault
-   ```
-
-2. Install the CLI tool:
-   ```bash
-   ./timevault install
-   ```
-
-### Running the App
-Once installed, simply type:
-   ```bash
-   timevault open
-   ```
-   *If you didn't install the CLI, navigate to the folder and use `./timevault open` instead.*
+*(To use the terminal CLI natively on Windows, open a new Command Prompt in the TimeVault folder and run `python timevault_cli [command]`).*
 
 ## CLI Commands
 The `timevault` CLI tool offers several helpful commands for managing your application seamlessly from the terminal:
