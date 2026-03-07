@@ -23,18 +23,18 @@ Track your time, manage tasks, and reflect on your daily progress – all in one
 - Background tracking that continues even when the browser is closed
 - Daily and weekly time goals per stopwatch with session history and gap tracking
 - Centralized task database with subtasks, priorities, and status tracking
-- Daily journal with morning routine, planning, reflection, and date navigation
-- Graphs and analytics with daily bar charts, category analysis, and trends
+- **Daily journal with customizable sections, and direct Kanban task integration**
+- **Graphs and analytics dashboard featuring global insights, doughnut charts, and a compact sparkline grid layout**
+- **Native Terminal CLI (`timevault_cli`) for managing tasks and timers directly from your shell**
 - Highly customizable UI including dynamic sidebar tabs
 - Dark and light theme support
-- Data export and backup
-- All data stored locally, never leaves your device
+- All data stored locally, never leaves your device and syncs securely via a lightweight local backend
 
 ## Tech Stack
-- HTML5
-- CSS3 with custom properties
+- HTML5 & CSS3 (Custom properties)
 - Vanilla JavaScript (ES6+)
-- LocalStorage for client-side persistence
+- Python 3 (Lightweight REST Server & CLI `timevault_cli`)
+- LocalStorage coupled with `~/.timevault/timevault-db.json` for persistence
 
 ## Getting Started
 
@@ -66,13 +66,22 @@ Once installed, simply type:
 
 ## CLI Commands
 The `timevault` CLI tool offers several helpful commands for managing your application seamlessly from the terminal:
-- `timevault open`: Starts the local development server (if not running) and opens TimeVault in your default browser.
+- `timevault open`: Starts the local development backend (`server.py`) and opens TimeVault in your default browser.
 - `timevault stop`: Gracefully stops the background local development server.
 - `timevault status`: Checks if the TimeVault server is currently actively running.
+- `timevault daemon [install|start|stop]`: Manages TimeVault as a background Systemd service.
 - `timevault update`: Pulls the latest changes from this GitHub repository.
 - `timevault backup`: Prints instructions on how to backup your sandboxed LocalStorage data.
 - `timevault install`: Creates a symlink in `~/.local/bin` so you can use the command everywhere.
 - `timevault uninstall`: Removes the symlink from your PATH.
+
+## Native Terminal Application 
+You can use `timevault_cli` to log time natively, completely synced with the Browser!
+- `timevault_cli start "Task Name"`: Starts tracking a new task visually linked to your frontend.
+- `timevault_cli break [Name]`: Switches your timer into break-mode / untracked time.
+- `timevault_cli stop`: Stops the current timer and pushes it to your Daily Log.
+- `timevault_cli status`: See what you are currently tracking.
+- `timevault_cli tasks`: Prints out your mapped Task Database Kanban board natively!
 
 ## Keeping Up-to-Date
 To update your local installation with the latest features:
@@ -93,7 +102,6 @@ timevault update
 ## TODO / Future Features
 
 - Make plugin with Arch
-- Add timevault_cli functionality to add from terminal
 
 ```
 MIT License
