@@ -1132,8 +1132,14 @@
                 </div>
                 <div class="form-group">
                     <label for="task-description">Description</label>
-                    <textarea id="task-description" class="form-input" rows="2"
-                        placeholder="Details (optional)"></textarea>
+                    <div class="modal-hint"
+                        style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                        <span>Use this field for quick notes, or open the full editor for longer writing.</span>
+                        <button type="button" id="open-task-description-editor" class="btn btn-sm btn-ghost">Open
+                            editor</button>
+                    </div>
+                    <textarea id="task-description" class="form-input task-description-editor" rows="4"
+                        placeholder="Short description here. For long writing, click “Open editor”. Supports basic README-style markdown."></textarea>
                 </div>
                 <div class="form-group">
                     <label>Tags</label>
@@ -1157,6 +1163,26 @@
                 <button class="btn btn-ghost" data-close-modal>Cancel</button>
                 <button id="delete-task-btn" class="btn btn-danger" style="display: none;">Delete</button>
                 <button id="save-task-btn" class="btn btn-primary">Create</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Large Description Editor Modal -->
+    <div id="task-description-modal" class="modal modal--wide">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Task Description</h3>
+                <button class="modal-close" data-description-close>&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-hint">Write freely using basic README-style markdown (headings, lists, links, etc.).
+                    Live preview on the right will auto-render your text.</p>
+                <div id="live-editor-container" class="live-preview-editor"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-ghost" id="task-description-cancel">Cancel</button>
+                <button type="button" class="btn btn-primary" id="task-description-apply">Apply &amp; Close</button>
             </div>
         </div>
     </div>
@@ -1264,7 +1290,8 @@
     <script src="js/time-tracker.js?v=5"></script>
     <script src="js/advanced-stopwatches.js?v=5"></script>
     <script src="js/shortcuts.js?v=5"></script>
-    <script src="js/tasks.js?v=5"></script>
+    <script src="js/live-editor.js?v=6"></script>
+    <script src="js/tasks.js?v=6"></script>
     <script src="js/dailys.js?v=5"></script>
     <script src="js/habits.js?v=5"></script>
     <script src="js/graphs.js?v=5"></script>

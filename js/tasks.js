@@ -8,7 +8,9 @@ const TasksModule = {
         board: null,
         addBtn: null,
         modal: null,
+        descModal: null,
     },
+    liveEditor: null,
 
     tasks: [],
     editingTaskId: null,
@@ -20,6 +22,7 @@ const TasksModule = {
         this.elements.board = document.getElementById('tasks-board');
         this.elements.addBtn = document.getElementById('add-task-btn');
         this.elements.modal = document.getElementById('task-modal');
+        this.elements.descModal = document.getElementById('task-description-modal');
 
         this.tasks = StorageManager.getTasks();
 
@@ -39,6 +42,14 @@ const TasksModule = {
         document.getElementById('task-tag-input')?.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') { e.preventDefault(); this.addTagFromInput(); }
         });
+
+        // Description full-screen editor (popup)
+        document.getElementById('open-task-description-editor')?.addEventListener('click', () => this.openDescriptionEditor());
+        document.getElementById('task-description-apply')?.addEventListener('click', () => this.applyDescriptionEditor());
+        document.getElementById('task-description-cancel')?.addEventListener('click', () => this.closeDescriptionEditor());
+        this.elements.descModal?.querySelector('.modal-backdrop')?.addEventListener('click', () => this.closeDescriptionEditor());
+        this.elements.descModal?.querySelector('[data-description-close]')?.addEventListener('click', () => this.closeDescriptionEditor());
+
 
         this.render();
     },
@@ -173,7 +184,7 @@ const TasksModule = {
             : '';
 
         const desc = task.description
-            ? `<div class="board-task-desc">${this.escapeHtml(task.description)}</div>`
+            ? `<div class="board-task-desc">${this.renderMarkdownBlock(task.description)}</div>`
             : '';
 
         const priorityDot = !isDone
@@ -534,6 +545,115 @@ const TasksModule = {
             this.render();
             App.showToast('Task deleted');
         }
+    },
+
+    // ============================================
+    // Markdown rendering for task descriptions
+    // ============================================
+
+    renderMarkdownBlock(text) {
+        if (!text) return '';
+
+        const lines = text.split(/\r?\n/);
+        let html = '';
+        let inList = false;
+
+        const closeList = () => {
+            if (inList) {
+                html += '</ul>';
+                inList = false;
+            }
+        };
+
+        lines.forEach(rawLine => {
+            const line = rawLine.replace(/\s+$/, '');
+
+            // Bullet lists: - item / * item / + item
+            if (/^\s*[-*+]\s+/.test(line)) {
+                if (!inList) {
+                    html += '<ul>';
+                    inList = true;
+                }
+                const itemText = line.replace(/^\s*[-*+]\s+/, '');
+                html += `<li>${this.renderMarkdownInline(this.escapeHtml(itemText))}</li>`;
+                return;
+            }
+
+            // Headings: #, ##, ### ...
+            const headingMatch = line.match(/^\s*(#{1,6})\s+(.*)$/);
+            if (headingMatch) {
+                closeList();
+                const level = Math.min(Math.max(headingMatch[1].length, 1), 6);
+                const content = this.renderMarkdownInline(this.escapeHtml(headingMatch[2]));
+                html += `<div class="md-h${level}">${content}</div>`;
+                return;
+            }
+
+            // Blank line -> spacing
+            if (line.trim() === '') {
+                closeList();
+                html += '<br />';
+                return;
+            }
+
+            // Normal paragraph
+            closeList();
+            html += `<p>${this.renderMarkdownInline(this.escapeHtml(line))}</p>`;
+        });
+
+        closeList();
+        return html;
+    },
+
+    renderMarkdownInline(escapedText) {
+        if (!escapedText) return '';
+
+        let text = escapedText;
+
+        // Links: [label](url)
+        text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, label, href) => {
+            const safeHref = href.replace(/"/g, '&quot;');
+            return `<a href="${safeHref}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+        });
+
+        // Bold: **text**
+        text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+
+        // Italic: *text*
+        text = text.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+
+        return text;
+    },
+
+    // ============================================
+    // Large description editor modal
+    // ============================================
+
+    openDescriptionEditor() {
+        const baseTextarea = document.getElementById('task-description');
+        if (!baseTextarea || !this.elements.descModal) return;
+
+        if (!this.liveEditor) {
+            this.liveEditor = new window.LivePreviewEditor('live-editor-container');
+        }
+
+        this.liveEditor.setValue(baseTextarea.value);
+        this.elements.descModal.classList.add('open');
+    },
+
+    closeDescriptionEditor() {
+        if (!this.elements.descModal) return;
+        this.elements.descModal.classList.remove('open');
+    },
+
+    applyDescriptionEditor() {
+        const baseTextarea = document.getElementById('task-description');
+        if (!baseTextarea || !this.liveEditor) {
+            this.closeDescriptionEditor();
+            return;
+        }
+        baseTextarea.value = this.liveEditor.getValue();
+        this.closeDescriptionEditor();
     },
 
     // ============================================

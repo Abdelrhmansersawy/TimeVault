@@ -486,6 +486,12 @@
     animation: modalSlideIn var(--transition-base) ease;
 }
 
+.modal.modal--wide .modal-content {
+    max-width: 900px;
+    width: 95%;
+    max-height: 90vh;
+}
+
 @keyframes modalSlideIn {
     from {
         opacity: 0;
@@ -1869,6 +1875,125 @@
 .tag-picker-input-row {
     display: flex;
     gap: var(--spacing-xs);
+}
+
+.task-description-editor {
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
+    min-height: 120px;
+    resize: vertical;
+    white-space: pre-wrap;
+}
+
+.board-task-desc {
+    white-space: normal;
+}
+
+.task-description-layout {
+    display: none;
+}
+
+/* ============================================
+   Live Preview Editor
+   ============================================ */
+.live-preview-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-md);
+    border: 1px solid var(--color-border);
+    max-height: 60vh;
+    min-height: 300px;
+    min-width: 600px;
+    overflow-y: auto;
+    font-size: var(--font-size-sm);
+    line-height: 1.6;
+}
+
+.live-block-container {
+    position: relative;
+    border-radius: var(--radius-sm);
+    transition: background 0.15s;
+    min-height: 24px;
+    padding: 0 4px;
+}
+
+.live-block-container:hover {
+    background: var(--color-bg-hover);
+}
+
+.live-block-view {
+    cursor: text;
+    padding: 0;
+}
+
+.live-block-view>p:first-child,
+.live-block-view>div:first-child,
+.live-block-view>ul:first-child {
+    margin-top: 0;
+}
+
+.live-block-view>p:last-child,
+.live-block-view>div:last-child,
+.live-block-view>ul:last-child {
+    margin-bottom: 0;
+}
+
+.live-block-view p {
+    margin: 0;
+}
+
+.live-block-view ul {
+    margin: 0 0 0 1.2em;
+    padding: 0;
+}
+
+.live-block-view a {
+    color: var(--color-accent);
+}
+
+.live-block-view .md-h1,
+.live-block-view .md-h2,
+.live-block-view .md-h3,
+.live-block-view .md-h4,
+.live-block-view .md-h5,
+.live-block-view .md-h6 {
+    font-weight: var(--font-weight-semibold);
+    margin: 0;
+}
+
+.live-block-view .md-h1 {
+    font-size: var(--font-size-xl);
+}
+
+.live-block-view .md-h2 {
+    font-size: var(--font-size-lg);
+}
+
+.live-block-empty {
+    height: 1.5em;
+}
+
+.live-block-editor.form-input {
+    width: 100%;
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
+    resize: none;
+    overflow: hidden;
+    padding: 4px;
+    margin: 0;
+    background: transparent;
+    border: none;
+    box-shadow: inset 0 0 0 1px var(--color-accent);
+    /* Focus ring effect */
+    color: var(--color-text-primary);
+    line-height: 1.6;
+    border-radius: var(--radius-sm);
+}
+
+.live-block-editor:focus {
+    outline: none;
+    background: var(--color-bg-primary);
 }
 
 .tag-picker-input-row .form-input {

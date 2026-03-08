@@ -22,13 +22,20 @@ Track your time, manage tasks, and reflect on your daily progress – all in one
 - Unlimited stopwatch instances with category organization and color coding
 - Background tracking that continues even when the browser is closed
 - Daily and weekly time goals per stopwatch with session history and gap tracking
-- Centralized task database with subtasks, priorities, and status tracking
-- **Daily journal with customizable sections, and direct Kanban task integration**
-- **Graphs and analytics dashboard featuring global insights, doughnut charts, and a compact sparkline grid layout**
-- **Native Terminal CLI (`timevault_cli`) for managing tasks and timers directly from your shell**
+- Centralized task database with subtasks, priorities, status tracking, and rich descriptions
+- Daily journal with customizable sections, and direct Kanban task integration
+- Graphs and analytics dashboard featuring global insights, doughnut charts, and a compact sparkline grid layout
+- Native Terminal CLI (`timevault_cli`) for managing tasks and timers directly from your shell
 - Highly customizable UI including dynamic sidebar tabs
 - Dark and light theme support
 - All data stored locally, never leaves your device and syncs securely via a lightweight local backend
+
+## Task descriptions & draft notes
+
+- Each task has a free-form description field that works as a simple text editor
+- You can write notes using basic README-style syntax (headings, lists, links, etc.)
+- This is ideal for drafting what you’re thinking about while working on the task
+- You can also include links to external notes, for example an Obsidian vault file using markdown links like `[My note](path-or-obsidian-link)`
 
 ## Tech Stack
 - HTML5 & CSS3 (Custom properties)
