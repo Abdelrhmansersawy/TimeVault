@@ -187,6 +187,10 @@ const TasksModule = {
             ? `<div class="board-task-desc">${this.renderMarkdownBlock(task.description)}</div>`
             : '';
 
+        const dateHtml = task.date
+            ? `<div class="board-task-date" style="font-size: var(--font-size-xs); color: var(--color-text-muted); margin-top: 4px; display: flex; align-items: center; gap: 4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg> ${task.date}</div>`
+            : '';
+
         const priorityDot = !isDone
             ? `<span class="board-task-priority board-task-priority--${task.priority}"></span>`
             : '';
@@ -205,6 +209,7 @@ const TasksModule = {
                         ${priorityDot}
                         <span class="board-task-title ${isDone ? 'struck' : ''}">${this.escapeHtml(task.title)}</span>
                     </div>
+                    ${dateHtml}
                     ${desc}
                     ${tagsHtml}
                 </div>
@@ -393,6 +398,7 @@ const TasksModule = {
         const prioritySelect = document.getElementById('task-priority');
         const statusSelect = document.getElementById('task-status');
         const stopwatchSelect = document.getElementById('task-stopwatch');
+        const dateInput = document.getElementById('task-date');
         const modalTitle = document.getElementById('task-modal-title');
         const saveBtn = document.getElementById('save-task-btn');
         const deleteBtn = document.getElementById('delete-task-btn');
@@ -418,6 +424,7 @@ const TasksModule = {
                 prioritySelect.value = task.priority;
                 statusSelect.value = task.status;
                 stopwatchSelect.value = task.assignedStopwatch || '';
+                if (dateInput) dateInput.value = task.date || '';
                 this.selectedTags = [...(task.tags || [])];
 
                 saveBtn.textContent = 'Save';
@@ -430,6 +437,7 @@ const TasksModule = {
             prioritySelect.value = 'medium';
             statusSelect.value = 'todo';
             stopwatchSelect.value = presetStopwatch || '';
+            if (dateInput) dateInput.value = '';
             this.selectedTags = [];
 
             saveBtn.textContent = 'Create';
@@ -501,6 +509,7 @@ const TasksModule = {
         const prioritySelect = document.getElementById('task-priority');
         const statusSelect = document.getElementById('task-status');
         const stopwatchSelect = document.getElementById('task-stopwatch');
+        const dateInput = document.getElementById('task-date');
 
         const title = titleInput.value.trim();
         if (!title) {
@@ -520,6 +529,7 @@ const TasksModule = {
             description: descInput.value.trim(),
             priority: prioritySelect.value,
             status: statusSelect.value,
+            date: dateInput ? dateInput.value : '',
             tags: [...this.selectedTags],
             subtasks: [],
             assignedStopwatch: stopwatchSelect.value || null
