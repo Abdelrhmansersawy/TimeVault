@@ -1984,8 +1984,6 @@
     margin: 0;
     background: transparent;
     border: none;
-    box-shadow: inset 0 0 0 1px var(--color-accent);
-    /* Focus ring effect */
     color: var(--color-text-primary);
     line-height: 1.6;
     border-radius: var(--radius-sm);
@@ -1993,8 +1991,8 @@
 
 .live-block-editor:focus {
     outline: none;
-    background: rgba(168, 85, 247, 0.15); /* Purple tint */
-    box-shadow: inset 0 0 0 2px #a855f7; /* Purple border */
+    background: var(--color-bg-primary);
+    box-shadow: none;
 }
 
 .tag-picker-input-row .form-input {
